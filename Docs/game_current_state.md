@@ -1,28 +1,30 @@
-# Game Development Status: 2026-05-08
+# Game Development Status: 2026-05-09 (Handover Edition)
 
 ## Current State
-- **Core Engine**: Advanced 3D rendering with billboard support for both sprites and vector-boxes.
-- **Entity System**: Unified, scalable RPG registry implemented in `data/entities/`.
-- **Rendering**: Smooth 'screen' blend mode for PNG sprites. Sharp pixel-art rendering (smoothing disabled).
-- **Entities**: Monsters and Items (Keys, Chests, Swords, Food) now share a common stats template.
-- **Level Design**: Expanded map characters (K, C, W, F) for item spawning.
+- **Core Engine**: Advanced pseudo-3D rendering using `1/Z` perspective-correct interpolation for decals and billboarding for sprites.
+- **Entity System**: Centralized registry in `data/entities/`. All entities (monsters, items, decals) follow a unified schema.
+- **Level Management**: `LevelManager` handles floor transitions, state caching (visited floors), and procedurally spawns monsters and loot based on map templates.
+- **Rendering**: Optimized for pixel art (no smoothing). Supports "wireframe" themes with fog and floor particles.
 
-## Completed in this session
-- [x] **Entity Registry Splitting**: Moved definitions to `data/entities/` (monsters, items, registry).
-- [x] **Unified RPG Template**: Added stats like HP, ATK, Weight, Value, and HealAmount to all entities.
-- [x] **Billboard Vector Boxes**: Fixed placeholder rendering to always face the player and center text.
-- [x] **Pixel Art Optimization**: Disabled canvas image smoothing for sharp sprite rendering.
-- [x] **Item Spawning**: LevelManager now spawns keys, chests, weapons, and food from map files.
+## 🚀 Handover Briefing for the Next AI Developer
+Welcome. You are taking over a high-quality, vanilla JS DRPG engine. The project is "Architect-ready".
 
-## Immediate Next Steps
-1. **Inventory System**: Logic to pick up items (K, C, W, F) and display them in a list.
-2. **Combat System**: Basic attack logic and HP reduction for monsters.
-3. **Locked Doors**: Implementation of 'L' tiles that require a specific `keyId`.
+### Key Architectures to Understand:
+1.  **Player Movement**: In `engine.js`, the player move is a state machine. `animProgress` handles interpolation between tiles. Inputs are blocked until `animProgress >= 1.0`.
+2.  **Rendering Pipeline**: The engine doesn't use Raycasting in the traditional sense; it projects wall faces and billboards. `engine.js:render()` is the heart.
+3.  **Entity Spawning**: Logic is in `systems/level.js`. It parses `.txt` maps and places entities from `EntityDefs`.
+
+### Critical Next Tasks:
+- [ ] **Inventory System**: The player can stand on items, but there is no `this.player.inventory` array or UI to show it.
+- [ ] **Combat Resolution**: The `attack()` method in `engine.js` finds the target, but doesn't yet reduce HP or trigger death states.
+- [ ] **Level Triggers**: Implement the logic for stairs (`<` and `>`) in `main.js` to call `LevelManager.loadLevel()`.
 
 ## Project Structure
 - `data/entities/`:
-    - `monsters.js`: Vihollisten määrittelyt.
-    - `items.js`: Esineiden ja varusteiden määrittelyt.
-    - `registry.js`: Keskitetty hakuportti kaikelle datalle.
-- `data/monsters/` & `data/objects/`: Vektori-pohjaiset fallback-templatet.
-- `data/sprites/`: PNG-grafiikat.
+    - `monsters.js`: Enemy stats and sprites.
+    - `items.js`: Gear, food, and quest items.
+    - `registry.js`: The "Source of Truth" for all entity definitions.
+- `systems/`:
+    - `level.js`: Dungeon floor logic and spawning.
+    - `sound.js`: WebAudio API (placeholders).
+- `engine.js`: The main rendering and collision engine.

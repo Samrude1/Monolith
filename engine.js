@@ -283,10 +283,12 @@ export class GameEngine {
         const t = p.animProgress;
 
         // Interpolated position — read-only, never written to player object
+        // --- RENDERING PIPELINE ---
+        // 1. Calculate interpolated position and rotation (for smooth movement/turning)
         const x = p.startX + (p.targetX - p.startX) * t;
         const y = p.startY + (p.targetY - p.startY) * t;
 
-        // Interpolate rotation via shortest path
+        // Interpolate rotation via shortest path to avoid 360 spins on wrap-around
         let sd = p.startDir;
         let td = p.targetDir;
         let diff = td - sd;
@@ -298,9 +300,9 @@ export class GameEngine {
         const cosA = Math.cos(angle);
         const sinA = Math.sin(angle);
 
-        // Collect visible wall faces
+        // 2. Collect visible wall faces and objects within view range
         const faces = [];
-        const range = 8;
+        const range = 8; // Render distance (fog limit)
         for (let dy = -range; dy <= range; dy++) {
             for (let dx = -range; dx <= range; dx++) {
                 const gx = Math.floor(x + dx);
@@ -505,7 +507,7 @@ export class GameEngine {
             }
         });
 
-        // 3. Painter's algorithm: draw far objects first
+        // 3. Painter's algorithm: sort by distance descending to draw far objects first (Z-buffer alternative)
         faces.sort((a, b) => b.dist - a.dist);
 
         ctx.lineWidth = 2;
@@ -537,10 +539,11 @@ export class GameEngine {
                 for (let sx = 0; sx < screenWidth; sx += sliceWidth) {
                     const t = sx / screenWidth;
                     
-                    // Perspective correct 1/Z interpolation for U coordinate
+                    // Perspective correct 1/Z interpolation for U coordinate (textures)
                     const z_inv = (1 / f.z1) * (1 - t) + (1 / f.z2) * t;
                     const u = ((f.u1 / f.z1) * (1 - t) + (f.u2 / f.z2) * t) / z_inv;
                     
+                    // Linear interpolation for vertical screen coordinates
                     const topY = f.yT1 + (f.yT2 - f.yT1) * t;
                     const bottomY = f.yB1 + (f.yB2 - f.yB1) * t;
                     const wallHeight = bottomY - topY;

@@ -1,48 +1,38 @@
 # MONOLITH 🏛️
 
-A minimalist, retro-styled 3D dungeon crawler built with pure JavaScript and HTML5 Canvas.
+A professional, high-performance pseudo-3D dungeon crawler engine built with Vanilla JavaScript and HTML5 Canvas.
 
 ![Monolith Screenshot](./images/screenshot.png)
 
 ## 🎮 Overview
 
-**Monolith** is a tribute to classic first-person dungeon crawlers (DRPGs) of the 8-bit and 16-bit era. It combines a custom pseudo-3D wireframe engine with pixel art sprites to create a unique, atmospheric exploration experience.
+**Monolith** is a technical showcase of first-person dungeon crawler (DRPG) mechanics. It features a custom rendering pipeline that simulates a 3D perspective using perspective-correct transformations, billboarding, and distance-based atmospheric effects—all without external libraries like Three.js.
 
 ### Key Features
-- **Custom Pseudo-3D Engine**: A lightweight raycasting-inspired engine optimized for a "True Vector" aesthetic.
-- **Dynamic Theme System**: Each dungeon floor has its own visual identity, including custom wall colors, distance fog, and floor particles.
-- **Classic DRPG Combat**: Turn-based interaction with monsters like Skeletons and Giant Spiders.
-- **Inventory & Loot**: Find weapons (Daggers, Swords, Maces), armor, and consumables hidden in treasure chests.
-- **Atmospheric Visuals**: Perspective-correct waist-lines, distance-scaled floor dust, and atmospheric fog.
+- **Custom Pseudo-3D Engine**: Fast, software-based rendering with sub-pixel precision.
+- **Advanced Sprite System**: High-quality billboard rendering for entities and wall decals with perspective-correct `1/Z` interpolation.
+- **Dynamic Theme Architecture**: Configurable visuals per floor, including fog, wall colors, and dust particles.
+- **Unified RPG Data Layer**: A centralized entity registry (`data/entities/`) for monsters and loot, using a standard template for HP, stats, and behavior.
+- **Retro Aesthetic**: Sharp pixel-art rendering with disabled smoothing and classic "wireframe-ish" waist-line details.
 
-## 🕹️ How to Play
-- **WASD / Arrow Keys**: Move and turn.
-- **Attack**: Strike the monster in front of you.
-- **Take**: Pick up items found on the floor.
-- **Inv**: Open your inventory to equip gear or use items.
-- **Explore**: Find the stairs ( `>` ) to descend deeper into the Monolith.
+## 🛠️ Technical Stack
+- **Engine**: Vanilla ES6+ JavaScript.
+- **Graphics**: HTML5 Canvas (Direct context manipulation).
+- **Architecture**: Modular "Manager" pattern (Engine, LevelManager, SoundManager).
+- **Data**: JSON/Registry-based entity system for easy balancing and expansion.
 
-## 🛠️ Technical Details
-- **Logic**: Vanilla JavaScript (ES6 Modules).
-- **Rendering**: HTML5 Canvas API (No external 3D libraries).
-- **Themes**: Centrally managed via `data/themes.js`.
-- **Level Design**: Maps are parsed from simple `.txt` files for easy modding.
+## 🚀 Handover Status (2026-05-09)
+This project is currently in a "Solid Core" state. The rendering and entity systems are fully functional. The codebase is prepared for a transition to a new development environment (e.g., Cursor/Claude).
 
-## 🚀 Running Locally
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Samrude1/Monolith.git
-   ```
-2. Open `index.html` in any modern web browser.
-3. (Optional) Use a local server (like `Live Server` or `npm run dev`) to ensure all modules load correctly.
+### Current Priorities for the New Model:
+1.  **Combat & Inventory Logic**: Implementing the state changes for attacking and item management.
+2.  **Map/Minimap**: Adding a navigation UI element.
+3.  **Persistence**: Integrating `localStorage` for floor progress and player stats.
 
-## 📜 Roadmap
-- [x] Theme-based Level System
-- [x] Pixel Art Sprite Integration
-- [x] Distance Fog & Floor Noise
-- [ ] Save/Load System (localStorage)
-- [ ] More enemy types and bosses
-- [ ] Dungeon map/minimap
+## 🕹️ Running Locally
+1. Clone the repository.
+2. Run `npm run dev` to start the local development server.
+3. Open `http://localhost:3000` (or the port specified in the console).
 
 ---
-*Created with passion for retro gaming.*
+*Architected for expansion. Optimized for performance.*

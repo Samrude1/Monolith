@@ -33,3 +33,16 @@ BSP (Binary Space Partitioning): Jakaa alueen huoneisiin ja yhdistää ne käyt�
 Cellular Automata: Luo orgaanisemman näköisiä luolia (kuin luonnon muovaamia).
 Loputtomuus: Aina kun pelaaja menee portaita alas, koodi generoi uuden, vaikeamman kerroksen lennosta. Seikkailu ei lopu koskaan!
 
+6. ARKKITEHTUURI & REFAKTOROINTI (Architect's Corner)
+------------------------------------------------------
+*   **Event-pohjainen viestintä**: Siirtyminen kohti EventBus-mallia, jotta `engine.js` ei tarvitse tietää liikaa UI-logiikasta tai äänistä.
+*   **Web Workerit**: Fysiikan ja AI-polunetsinnän siirtäminen taustaprosessiin (Worker), jotta renderöinti pysyy sulavana 60fps myös sadoilla entiteeteillä.
+*   **Shader-tyyliset post-prosessointiefektit**: Canvas-manipulaatio (esim. scanlines, vinjetointi) retro-tunnelman syventämiseksi.
+*   **Stats Engine**: Abstrahoidaan HP, EXP ja Skill-laskenta omaan moduliinsa, joka tukee kertoimia ja dynaamisia stat-bonuksia.
+
+7. KEHITTYNYT AI & PATHFINDING
+-------------------------------
+*   **A* (A-Star)**: Korvataan nykyinen "suoraviivainen" AI älykkäämmällä reitinhaulla, jotta viholliset eivät jää jumiin kulmien taakse.
+*   **FSM (Finite State Machine)**: Selkeämpi tilakone vihollisille (IDLE, PATROL, CHASE, ATTACK, FLEE).
+*   **Group Behavior**: Viholliset, jotka osaavat liikkua ryhmissä tai kutsua apua.
+
