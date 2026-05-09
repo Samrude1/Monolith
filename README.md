@@ -2,7 +2,7 @@
 
 A minimalist, retro-styled 3D dungeon crawler built with pure JavaScript and HTML5 Canvas.
 
-![Game Screenshot](./images/potion_healing.png) <!-- Just an example sprite for now -->
+![Monolith Screenshot](./images/screenshot.png)
 
 ## 🎮 Overview
 
