@@ -137,6 +137,18 @@ export class LevelManager {
             }
             
             this.engine.entities = floorEntities;
+            
+            // Add test wall decal on floor 1
+            if (floorNum === 1) {
+                this.engine.entities.push({
+                    type: 'decal',
+                    monsterType: 'potion_decal',
+                    x: 3, 
+                    y: 2, 
+                    facing: 'N'
+                });
+            }
+
             this.saveCurrentState(); // Initial cache
             return true;
 

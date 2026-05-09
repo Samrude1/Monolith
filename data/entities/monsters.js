@@ -11,7 +11,8 @@ export const MonsterDefs = {
         cooldown: 5000,
         spriteFile: './images/skeleton.png',
         file: './data/monsters/Skeleton.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 1.2, onFloor: true
     },
     'spider': {
         id: 'spider',
@@ -22,6 +23,7 @@ export const MonsterDefs = {
         cooldown: 3000,
         spriteFile: './images/spider.png',
         file: './data/monsters/Spider.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.8, onFloor: true
     }
 };

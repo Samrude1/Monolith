@@ -26,6 +26,5 @@ build/
 .DS_Store
 Thumbs.db
 
-# Project Specific Exclusions (Requested by USER)
-Docs/
+# Project Specific Exclusions
 .gemini/

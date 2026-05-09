@@ -10,7 +10,8 @@ export const ItemDefs = {
         weight: 0.1, value: 10, keyId: 'gate_1',
         spriteFile: './images/key.png',
         file: './data/objects/Key.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.4, onFloor: true
     },
     'food': {
         id: 'food',
@@ -20,7 +21,8 @@ export const ItemDefs = {
         weight: 0.2, value: 5, healAmount: 10,
         spriteFile: './images/apple.png',
         file: './data/objects/Food.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.4, onFloor: true
     },
     'sword': {
         id: 'sword',
@@ -31,7 +33,8 @@ export const ItemDefs = {
         cooldown: 4000, // 4 seconds cooldown
         spriteFile: './images/sword.png',
         file: './data/objects/Sword.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.6, onFloor: true
     },
     'dagger': {
         id: 'dagger',
@@ -42,7 +45,8 @@ export const ItemDefs = {
         cooldown: 1500,
         spriteFile: './images/dagger.png',
         file: './data/objects/Dagger.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.5, onFloor: true
     },
     'mace': {
         id: 'mace',
@@ -53,7 +57,8 @@ export const ItemDefs = {
         cooldown: 7000,
         spriteFile: './images/mace.png',
         file: './data/objects/Mace.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.7, onFloor: true
     },
     'leather_armor': {
         id: 'leather_armor',
@@ -63,7 +68,8 @@ export const ItemDefs = {
         def: 5, weight: 5.0, value: 100,
         spriteFile: './images/armor.png',
         file: './data/objects/Armor.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.7, onFloor: true
     },
     'health_potion': {
         id: 'health_potion',
@@ -71,9 +77,10 @@ export const ItemDefs = {
         type: 'consumable',
         description: 'A glowing red liquid. Restores 50 HP.',
         weight: 0.5, value: 25, healAmount: 50,
-        spriteFile: './images/potion_healing.png',
+        spriteFile: './images/potion.png',
         file: './data/objects/Potion.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.2, onFloor: true
     },
     'gold_pile': {
         id: 'gold_pile',
@@ -83,7 +90,8 @@ export const ItemDefs = {
         goldValue: 30, weight: 0, value: 30,
         spriteFile: './images/gold.png',
         file: './data/objects/Gold.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.4, onFloor: true
     },
     'chest': {
         id: 'chest',
@@ -93,7 +101,8 @@ export const ItemDefs = {
         isLocked: false, lootTable: ['gold', 'food'],
         spriteFile: './images/chest.png',
         file: './data/objects/Chest.txt',
-        sprite: null, vector: []
+        sprite: null, vector: [],
+        scale: 0.8, onFloor: true
     },
     'stairs_up': {
         id: 'stairs_up',
@@ -105,6 +114,26 @@ export const ItemDefs = {
         id: 'stairs_down',
         name: 'v STAIRS DOWN v',
         type: 'object',
+        sprite: null, vector: []
+    },
+    'wall_lever': {
+        id: 'wall_lever',
+        name: 'Iron Lever',
+        type: 'surface', // Use the new surface type
+        description: 'A heavy iron lever. It looks like it could trigger a mechanism.',
+        spriteFile: './images/potion.png', 
+        file: './data/objects/Lever.txt',
+        scale: 0.4,
+        wScale: 0.3,
+        sprite: null, vector: []
+    },
+    'potion_decal': {
+        id: 'potion_decal',
+        name: 'Wall Potion',
+        spriteFile: './images/potion.png', 
+        width: 0.5,
+        scale: 0.5,
+        yOffset: 0.0,
         sprite: null, vector: []
     }
 };

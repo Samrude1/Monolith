@@ -360,6 +360,98 @@ export class GameEngine {
             const def = Entities[ent.monsterType];
             if (!def) return;
 
+            if (ent.type === 'decal') {
+                const faceDir = ent.facing || 'N';
+                const width = def.width || 0.6; // fraction of wall width
+                const gx = Math.floor(ent.x);
+                const gy = Math.floor(ent.y);
+                
+                // Full wall segment
+                let w1, w2, nx, ny;
+                switch (faceDir) {
+                    case 'N': w1 = { x: gx, y: gy }; w2 = { x: gx + 1, y: gy }; nx = 0; ny = -1; break;
+                    case 'E': w1 = { x: gx + 1, y: gy }; w2 = { x: gx + 1, y: gy + 1 }; nx = 1; ny = 0; break;
+                    case 'S': w1 = { x: gx + 1, y: gy + 1 }; w2 = { x: gx, y: gy + 1 }; nx = 0; ny = 1; break;
+                    case 'W': w1 = { x: gx, y: gy + 1 }; w2 = { x: gx, y: gy }; nx = -1; ny = 0; break;
+                }
+                
+                // Backface culling
+                const vx = x - w1.x;
+                const vy = y - w1.y;
+                if (nx * vx + ny * vy < 0) return;
+                
+                // Scale width and center it
+                const cx = (w1.x + w2.x) / 2;
+                const cy = (w1.y + w2.y) / 2;
+                const dx_w = w2.x - w1.x;
+                const dy_w = w2.y - w1.y;
+                
+                w1 = { x: cx - dx_w * width / 2, y: cy - dy_w * width / 2 };
+                w2 = { x: cx + dx_w * width / 2, y: cy + dy_w * width / 2 };
+                
+                // Project
+                const cam = (w) => ({
+                    rz: (w.x - x) * cosA + (w.y - y) * sinA,
+                    rx: -(w.x - x) * sinA + (w.y - y) * cosA,
+                });
+                
+                let c1 = cam(w1);
+                let c2 = cam(w2);
+                
+                const NEAR = 0.1;
+                let u1 = 0.0;
+                let u2 = 1.0;
+                
+                if (c1.rz < NEAR && c2.rz < NEAR) return;
+                
+                if (c1.rz < NEAR) {
+                    const t = (NEAR - c1.rz) / (c2.rz - c1.rz);
+                    c1 = { rz: NEAR, rx: c1.rx + (c2.rx - c1.rx) * t };
+                    u1 = t;
+                } else if (c2.rz < NEAR) {
+                    const t = (NEAR - c2.rz) / (c1.rz - c2.rz);
+                    c2 = { rz: NEAR, rx: c2.rx + (c1.rx - c2.rx) * t };
+                    u2 = 1.0 - t;
+                }
+                
+                const proj = (c) => {
+                    const f = this.focalLength / c.rz;
+                    const c_sx = this.canvas.width / 2;
+                    const c_sy = this.canvas.height / 2;
+                    return { sx: c.rx * f + c_sx, yT: -0.5 * f + c_sy, yB: 0.5 * f + c_sy };
+                };
+                
+                const s1 = proj(c1);
+                const s2 = proj(c2);
+                
+                if (s1.sx > s2.sx) {
+                    faces.push({
+                        type: 'wall-decal',
+                        sprite: def.sprite,
+                        x1: s2.sx, yT1: s2.yT, yB1: s2.yB,
+                        x2: s1.sx, yT2: s1.yT, yB2: s1.yB,
+                        dist: ((c1.rz + c2.rz) / 2) - 0.001,
+                        u1: u2, u2: u1,
+                        z1: c2.rz, z2: c1.rz,
+                        vScale: def.scale || 1.0,
+                        vOffset: def.yOffset || 0.0
+                    });
+                } else {
+                    faces.push({
+                        type: 'wall-decal',
+                        sprite: def.sprite,
+                        x1: s1.sx, yT1: s1.yT, yB1: s1.yB,
+                        x2: s2.sx, yT2: s2.yT, yB2: s2.yB,
+                        dist: ((c1.rz + c2.rz) / 2) - 0.001, // Prevent Z-fighting with wall
+                        u1: u1, u2: u2,
+                        z1: c1.rz, z2: c2.rz,
+                        vScale: def.scale || 1.0,
+                        vOffset: def.yOffset || 0.0
+                    });
+                }
+                return;
+            }
+
             const dx = ent.x - x;
             const dy = ent.y - y;
             const rz = dx * cosA + dy * sinA;
@@ -378,9 +470,18 @@ export class GameEngine {
                 const rx = -dx * sinA + dy * cosA;
                 const f = this.focalLength / (rz - (lunge * 0.01));
                 const sx = rx * f + (this.canvas.width / 2);
-                const sy = (this.canvas.height / 2) + bobOffset;
-                const size = f;
-
+                
+                // Automate floor placement if onFloor is true
+                let sy = (this.canvas.height / 2) + bobOffset;
+                const scale = def.scale || 1;
+                if (def.onFloor) {
+                    // Formula to touch floor: horizon + (0.5*f) - (size/2)
+                    sy += f * (0.5 - scale / 2);
+                } else {
+                    sy += (def.anchorY || 0) * f;
+                }
+                const size = f * scale;
+                
                 faces.push({
                     type: 'sprite',
                     sprite: def.sprite,
@@ -413,8 +514,50 @@ export class GameEngine {
                 // Draw PNG Sprite
                 ctx.save();
                 ctx.globalCompositeOperation = 'screen'; // Black becomes transparent
-                const s = f.size;
-                ctx.drawImage(f.sprite, f.sx - s / 2, f.sy - s / 2, s, s);
+                const img = f.sprite;
+                if (!img || !img.complete || img.naturalWidth === 0) {
+                    ctx.restore();
+                    continue;
+                }
+                const aspect = img.width / img.height;
+                const h = f.size;
+                const w = h * aspect;
+                ctx.drawImage(img, f.sx - w / 2, f.sy - h / 2, w, h);
+                ctx.restore();
+            } else if (f.type === 'wall-decal') {
+                const screenWidth = f.x2 - f.x1;
+                const img = f.sprite;
+                if (!img || !img.complete || img.naturalWidth === 0 || screenWidth <= 0.5) continue;
+                
+                ctx.save();
+                // Käytetään 'screen' jotta musta tausta muuttuu läpinäkyväksi (kuten spriteissä)
+                ctx.globalCompositeOperation = 'screen'; 
+                
+                const sliceWidth = 1;
+                for (let sx = 0; sx < screenWidth; sx += sliceWidth) {
+                    const t = sx / screenWidth;
+                    
+                    // Perspective correct 1/Z interpolation for U coordinate
+                    const z_inv = (1 / f.z1) * (1 - t) + (1 / f.z2) * t;
+                    const u = ((f.u1 / f.z1) * (1 - t) + (f.u2 / f.z2) * t) / z_inv;
+                    
+                    const topY = f.yT1 + (f.yT2 - f.yT1) * t;
+                    const bottomY = f.yB1 + (f.yB2 - f.yB1) * t;
+                    const wallHeight = bottomY - topY;
+                    
+                    const dh = wallHeight * f.vScale;
+                    const cy = (topY + bottomY) / 2;
+                    const dy = cy + (f.vOffset * wallHeight) - (dh / 2);
+                    
+                    const sourceX = Math.floor(u * img.width);
+                    const clampedSx = Math.max(0, Math.min(img.width - 1, sourceX));
+                    
+                    ctx.drawImage(
+                        img,
+                        clampedSx, 0, 1, img.height,
+                        f.x1 + sx, dy, sliceWidth, dh
+                    );
+                }
                 ctx.restore();
             } else if (f.type === 'vector-box') {
                 // Draw Billboarded Placeholder Box
