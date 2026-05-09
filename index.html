@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Vector Adventure</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-wrapper">
+        <!-- Main Menu Overlay -->
+        <div id="main-menu" class="overlay">
+            <div class="menu-content">
+                <h1 class="rpg-title">RETRO ADVENTURE</h1>
+                <div class="menu-buttons">
+                    <button id="btn-start" class="rpg-btn large">START JOURNEY</button>
+                    <button id="btn-settings" class="rpg-btn large">SETTINGS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Overlay -->
+        <div id="settings-menu" class="overlay hidden">
+            <div class="menu-content">
+                <h2 class="panel-header">SETTINGS</h2>
+                <div class="setting-group">
+                    <div class="setting-row">
+                        <label>SOUNDS:</label>
+                        <button id="btn-toggle-sound" class="rpg-btn">ON</button>
+                    </div>
+                    <div class="setting-row">
+                        <label>UI SCALE:</label>
+                        <select id="select-resolution" class="rpg-select">
+                            <option value="auto">AUTO (FIT)</option>
+                            <option value="1">100% (BASE)</option>
+                            <option value="1.2">120%</option>
+                            <option value="1.5">150%</option>
+                            <option value="2">200% (LARGE)</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="btn-settings-back" class="rpg-btn">BACK</button>
+            </div>
+        </div>
+
+        <div id="main-layout" class="hidden">
+            <!-- Left Side: Stats -->
+            <div id="stats-panel" class="ui-panel">
+                <div class="panel-header">CHARACTER</div>
+                <div class="stat-group">
+                    <div class="stat-row">HP: <span id="hp-value">100</span></div>
+                    <div class="stat-row">DIR: <span id="dir-value">N</span></div>
+                </div>
+                
+                <div class="panel-header">EQUIPMENT</div>
+                <div class="stat-group">
+                    <div class="stat-row small">WEAPON: <span id="val-weapon">None</span></div>
+                    <div class="stat-row small">OUTFIT: <span id="val-armor">None</span></div>
+                </div>
+
+                <div class="panel-header">STATS</div>
+                <div class="stat-group">
+                    <div class="stat-row small">DMG: <span id="val-dmg">0</span></div>
+                    <div class="stat-row small">DEF: <span id="val-def">0</span></div>
+                    <div class="stat-row small">GOLD: <span id="val-gold">0</span></div>
+                    <div class="stat-row small">XP: <span id="val-xp">0</span></div>
+                </div>
+            </div>
+
+            <!-- Center: Game View -->
+            <div id="view-container">
+                <canvas id="gameCanvas"></canvas>
+                
+                <!-- Game Over Overlay -->
+                <div id="game-over-overlay" class="overlay hidden">
+                    <div class="menu-content">
+                        <div class="death-msg">YOU HAVE PERISHED</div>
+                        <div class="death-sub">Your journey ends in this dark place.</div>
+                        <div class="menu-buttons">
+                            <button id="btn-restart" class="rpg-btn">RETRY</button>
+                            <button id="btn-to-menu" class="rpg-btn">MENU</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Overlay (Hidden by default) -->
+                <div id="inventory-overlay" class="hidden">
+                    <div class="inventory-header">
+                        <span>INVENTORY</span>
+                        <button id="btn-close-inv">X</button>
+                    </div>
+                    <div id="inventory-grid">
+                        <!-- Slots will be generated here -->
+                    </div>
+                    <div id="item-details">
+                        <div id="item-name">Select an item</div>
+                        <div id="item-desc">...</div>
+                        <div id="item-actions">
+                            <!-- Contextual buttons like EQUIP, EAT, DROP -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Actions & Controls -->
+            <div id="action-panel" class="ui-panel">
+                <div class="panel-header">ACTIONS</div>
+                <div class="action-buttons">
+                    <button id="btn-attack" class="rpg-btn">ATTACK</button>
+                    <button id="btn-defend" class="rpg-btn">DEFEND</button>
+                    <button id="btn-take" class="rpg-btn">TAKE</button>
+                    <button id="btn-open" class="rpg-btn">OPEN</button>
+                    <button id="btn-inv" class="rpg-btn">INV</button>
+                </div>
+                
+                <div id="movement-controls">
+                    <div class="dpad">
+                        <button id="btn-up" class="dpad-btn up">↑</button>
+                        <div class="dpad-mid">
+                            <button id="btn-left" class="dpad-btn left">←</button>
+                            <button id="btn-right" class="dpad-btn right">→</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom: Info/Message Log -->
+        <div id="info-bar" class="hidden">
+            <div id="message-log">
+                <div class="message">Welcome to the Vector Dungeon...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
