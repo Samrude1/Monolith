@@ -1,4 +1,5 @@
 import { EntityDefs } from '../data/entities/registry.js';
+import { LevelThemes } from '../data/themes.js';
 
 /**
  * Manages dungeon levels, transitions, and state persistence.
@@ -51,6 +52,11 @@ export class LevelManager {
                 this.engine.map = this.map;
                 this.engine.entities = cached.entities;
                 this.setPlayerPosition(entryChar);
+                
+                // Apply theme
+                const theme = LevelThemes[this.currentFloor] || LevelThemes.default;
+                this.engine.setTheme(theme);
+
                 return true;
             }
 
@@ -82,6 +88,10 @@ export class LevelManager {
             }
             
             this.setPlayerPosition(entryChar); 
+
+            // Apply theme
+            const theme = LevelThemes[this.currentFloor] || LevelThemes.default;
+            this.engine.setTheme(theme);
 
             // Randomize spawn locations
             for (let i = emptyTiles.length - 1; i > 0; i--) {

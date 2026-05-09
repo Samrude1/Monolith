@@ -8,7 +8,7 @@ export const ItemDefs = {
         type: 'key',
         description: 'A rusty iron key. It might open a specific door.',
         weight: 0.1, value: 10, keyId: 'gate_1',
-        spriteFile: './data/sprites/Key.png',
+        spriteFile: './images/key.png',
         file: './data/objects/Key.txt',
         sprite: null, vector: []
     },
@@ -18,7 +18,7 @@ export const ItemDefs = {
         type: 'consumable',
         description: 'A crisp, red apple. Restores a small amount of HP.',
         weight: 0.2, value: 5, healAmount: 10,
-        spriteFile: './data/sprites/Food.png',
+        spriteFile: './images/apple.png',
         file: './data/objects/Food.txt',
         sprite: null, vector: []
     },
@@ -29,7 +29,7 @@ export const ItemDefs = {
         description: 'A basic steel blade. Better than fighting with bare hands.',
         atk: 5, def: 2, damage: 10, weight: 1.5, value: 50,
         cooldown: 4000, // 4 seconds cooldown
-        spriteFile: './data/sprites/Sword.png',
+        spriteFile: './images/sword.png',
         file: './data/objects/Sword.txt',
         sprite: null, vector: []
     },
@@ -40,7 +40,7 @@ export const ItemDefs = {
         description: 'Small but deadly. Very fast to use.',
         atk: 2, def: 1, damage: 6, weight: 0.5, value: 30,
         cooldown: 1500,
-        spriteFile: './data/sprites/Dagger.png',
+        spriteFile: './images/dagger.png',
         file: './data/objects/Dagger.txt',
         sprite: null, vector: []
     },
@@ -51,7 +51,7 @@ export const ItemDefs = {
         description: 'A heavy bludgeoning weapon. Slow but hits like a truck.',
         atk: 12, def: 0, damage: 18, weight: 4.0, value: 120,
         cooldown: 7000,
-        spriteFile: './data/sprites/Mace.png',
+        spriteFile: './images/mace.png',
         file: './data/objects/Mace.txt',
         sprite: null, vector: []
     },
@@ -61,7 +61,7 @@ export const ItemDefs = {
         type: 'armor',
         description: 'Basic protection made from cured hide.',
         def: 5, weight: 5.0, value: 100,
-        spriteFile: './data/sprites/Armor.png',
+        spriteFile: './images/armor.png',
         file: './data/objects/Armor.txt',
         sprite: null, vector: []
     },
@@ -71,7 +71,7 @@ export const ItemDefs = {
         type: 'consumable',
         description: 'A glowing red liquid. Restores 50 HP.',
         weight: 0.5, value: 25, healAmount: 50,
-        spriteFile: './data/sprites/Potion.png',
+        spriteFile: './images/potion_healing.png',
         file: './data/objects/Potion.txt',
         sprite: null, vector: []
     },
@@ -81,7 +81,7 @@ export const ItemDefs = {
         type: 'treasure',
         description: 'A small pile of glinting gold coins.',
         goldValue: 30, weight: 0, value: 30,
-        spriteFile: './data/sprites/Gold.png',
+        spriteFile: './images/gold.png',
         file: './data/objects/Gold.txt',
         sprite: null, vector: []
     },
@@ -91,7 +91,7 @@ export const ItemDefs = {
         type: 'container',
         description: 'A wooden chest bound with iron. Could contain loot.',
         isLocked: false, lootTable: ['gold', 'food'],
-        spriteFile: './data/sprites/Chest.png',
+        spriteFile: './images/chest.png',
         file: './data/objects/Chest.txt',
         sprite: null, vector: []
     },

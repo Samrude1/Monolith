@@ -16,7 +16,7 @@ export class GameEngine {
         // targetX/Y/Dir = where we are going TO
         // animProgress: 0.0 (just started) → 1.0 (done)
         this.player = {
-            startX: 0,  startY: 0,  startDir: 0,
+            startX: 0, startY: 0, startDir: 0,
             targetX: 0, targetY: 0, targetDir: 0,
             animProgress: 1.0   // 1.0 = idle / ready for input
         };
@@ -25,6 +25,26 @@ export class GameEngine {
         this.canvas.width = 800;
         this.canvas.height = 650;
         this.entities = [];
+
+        // Default Theme
+        this.theme = {
+            wallColor: [255, 255, 255],
+            dustColor: [100, 100, 100],
+            dustSize: 4,
+            fogDist: 8,
+            waistLine: 0.7,
+            showWaistLine: true
+        };
+    }
+
+    setTheme(config) {
+        this.theme = { ...this.theme, ...config };
+    }
+
+    // Stable "random" for floor noise
+    hash(x, y, i, seed) {
+        const val = Math.sin(x * 12.9898 + y * 78.233 + i * 37.11 + seed) * 43758.5453;
+        return val - Math.floor(val);
     }
 
     async loadMap(url) {
@@ -35,8 +55,8 @@ export class GameEngine {
         for (let y = 0; y < this.map.length; y++) {
             for (let x = 0; x < this.map[y].length; x++) {
                 if (this.map[y][x] === 'S') {
-                    this.player.startX  = this.player.targetX = x + 0.5;
-                    this.player.startY  = this.player.targetY = y + 0.5;
+                    this.player.startX = this.player.targetX = x + 0.5;
+                    this.player.startY = this.player.targetY = y + 0.5;
                     this.player.startDir = this.player.targetDir = 0; // face North
                     this.map[y][x] = '.';
                 }
@@ -57,7 +77,7 @@ export class GameEngine {
         const targetCell = this.map[ty] ? this.map[ty][tx] : null;
 
         // Check for monster blocking player
-        const isMonsterBlocking = this.entities.some(e => 
+        const isMonsterBlocking = this.entities.some(e =>
             e.type === 'monster' && Math.floor(e.x) === tx && Math.floor(e.y) === ty
         );
 
@@ -65,11 +85,11 @@ export class GameEngine {
 
         // Allow walking through floor tiles (.) open doors (d) and stairs (<, >)
         if (targetCell === '.' || targetCell === 'd' || targetCell === '<' || targetCell === '>') {
-            this.player.startX   = this.player.targetX;
-            this.player.startY   = this.player.targetY;
+            this.player.startX = this.player.targetX;
+            this.player.startY = this.player.targetY;
             this.player.startDir = this.player.targetDir;
-            this.player.targetX  = tx + 0.5;
-            this.player.targetY  = ty + 0.5;
+            this.player.targetX = tx + 0.5;
+            this.player.targetY = ty + 0.5;
             this.player.animProgress = 0.0;
             return targetCell; // Return the cell we stepped onto
         }
@@ -80,8 +100,8 @@ export class GameEngine {
     rotate(val) {
         if (this.player.animProgress < 1.0) return false;
         // Sync position so it is NOT re-interpolated during turn
-        this.player.startX   = this.player.targetX;
-        this.player.startY   = this.player.targetY;
+        this.player.startX = this.player.targetX;
+        this.player.startY = this.player.targetY;
         this.player.startDir = this.player.targetDir;
         this.player.targetDir = (this.player.targetDir + val + 4) % 4;
         this.player.animProgress = 0.0;
@@ -90,7 +110,7 @@ export class GameEngine {
 
     interact() {
         if (this.player.animProgress < 1) return null;
-        
+
         const px = Math.floor(this.player.targetX);
         const py = Math.floor(this.player.targetY);
         const standingCell = this.map[py] ? this.map[py][px] : null;
@@ -102,7 +122,7 @@ export class GameEngine {
         const dir = this.player.targetDir;
         let tx = px;
         let ty = py;
-        
+
         if (dir === 0) ty--; // N
         else if (dir === 1) tx++; // E
         else if (dir === 2) ty++; // S
@@ -122,14 +142,14 @@ export class GameEngine {
         const dir = this.player.targetDir;
         let tx = Math.floor(this.player.targetX);
         let ty = Math.floor(this.player.targetY);
-        
+
         if (dir === 0) ty--; // N
         else if (dir === 1) tx++; // E
         else if (dir === 2) ty++; // S
         else if (dir === 3) tx--; // W
 
         // Find monster at target tile
-        const monster = this.entities.find(e => 
+        const monster = this.entities.find(e =>
             e.type === 'monster' && Math.floor(e.x) === tx && Math.floor(e.y) === ty
         );
 
@@ -170,7 +190,7 @@ export class GameEngine {
 
             const dx = px - ent.x;
             const dy = py - ent.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
             // 1. Attack if close and cooldown is ready
             if (dist < 1.1 && ent.currentCooldown <= 0) {
@@ -182,21 +202,21 @@ export class GameEngine {
 
             // 2. Move AI (Wandering or Chasing)
             ent.moveTimer = (ent.moveTimer || 0) + dt;
-            const moveDelay = (dist < 6) ? (0.7 / ent.spd) : (3.0 / ent.spd); 
+            const moveDelay = (dist < 6) ? (0.7 / ent.spd) : (3.0 / ent.spd);
 
             if (ent.moveTimer > moveDelay) {
                 ent.moveTimer = 0;
-                
+
                 let dx_move = 0;
                 let dy_move = 0;
-                
+
                 if (dist < 6) {
                     // CHASING
                     if (Math.abs(dx) > Math.abs(dy)) dx_move = Math.sign(dx);
                     else dy_move = Math.sign(dy);
                 } else {
                     // WANDERING
-                    const dirs = [{x:0,y:-1}, {x:1,y:0}, {x:0,y:1}, {x:-1,y:0}];
+                    const dirs = [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }];
                     const randDir = dirs[Math.floor(Math.random() * dirs.length)];
                     dx_move = randDir.x;
                     dy_move = randDir.y;
@@ -205,7 +225,7 @@ export class GameEngine {
                 // Check first choice
                 let nx = ent.x + dx_move;
                 let ny = ent.y + dy_move;
-                
+
                 if (!this.isTileWalkable(nx, ny, ent)) {
                     // If blocked, and chasing, try the OTHER axis
                     if (dist < 6) {
@@ -233,20 +253,20 @@ export class GameEngine {
     isTileWalkable(nx, ny, self) {
         const gx = Math.floor(nx);
         const gy = Math.floor(ny);
-        
+
         // Wall check - allow '.', 'd' (open door), '<', '>' (stairs)
         const cell = this.map[gy] ? this.map[gy][gx] : null;
         if (cell !== '.' && cell !== 'd' && cell !== '<' && cell !== '>') return false;
-        
+
         // Monster collision (ignore items/objects)
-        const occupied = this.entities.some(e => 
-            e !== self && 
+        const occupied = this.entities.some(e =>
+            e !== self &&
             e.type === 'monster' && // Only block if it's another monster
-            Math.floor(e.x) === gx && 
+            Math.floor(e.x) === gx &&
             Math.floor(e.y) === gy
         );
         if (occupied) return false;
-        
+
         // Player collision
         const atPlayer = (gx === Math.floor(this.player.targetX) && gy === Math.floor(this.player.targetY));
         if (atPlayer) return false;
@@ -270,7 +290,7 @@ export class GameEngine {
         let sd = p.startDir;
         let td = p.targetDir;
         let diff = td - sd;
-        if (diff >  2) diff -= 4;
+        if (diff > 2) diff -= 4;
         if (diff < -2) diff += 4;
         // angle: dir 0 = North = -PI/2 in standard math
         const angle = (sd + diff * t) * (Math.PI / 2) - Math.PI / 2;
@@ -290,26 +310,45 @@ export class GameEngine {
 
                 if (isSolid) {
                     const sides = [
-                        { nx: gx,     ny: gy - 1, face: 'N' },
-                        { nx: gx + 1, ny: gy,     face: 'E' },
-                        { nx: gx,     ny: gy + 1, face: 'S' },
-                        { nx: gx - 1, ny: gy,     face: 'W' },
+                        { nx: gx, ny: gy - 1, face: 'N' },
+                        { nx: gx + 1, ny: gy, face: 'E' },
+                        { nx: gx, ny: gy + 1, face: 'S' },
+                        { nx: gx - 1, ny: gy, face: 'W' },
                     ];
                     for (const s of sides) {
                         const neighbor = this.map[s.ny] ? this.map[s.ny][s.nx] : null;
                         // A face is visible if it separates a solid cell from a walkable one
                         const isWalkableNeighbor = neighbor === '.' || neighbor === 'd' || neighbor === '<' || neighbor === '>';
-                        
+
                         const isVisible = (cell === '#' && isWalkableNeighbor) ||
-                                          (cell === 'D' && isWalkableNeighbor) ||
-                                          (cell === 'd' && isWalkableNeighbor);
-                        
+                            (cell === 'D' && isWalkableNeighbor) ||
+                            (cell === 'd' && isWalkableNeighbor);
+
                         if (!isVisible) continue;
-                        
+
                         const fd = this.getFace(gx, gy, s.face, x, y, cosA, sinA);
                         if (fd) {
                             fd.isDoor = (cell === 'D' || cell === 'd');
                             faces.push(fd);
+                        }
+                    }
+                }
+
+                // --- Collect Floor Noise (Dust) ---
+                if (!isSolid) {
+                    for (let i = 0; i < 3; i++) {
+                        const rx = this.hash(gx, gy, i, 1);
+                        const ry = this.hash(gx, gy, i, 2);
+                        const dx_p = (gx + rx) - x;
+                        const dy_p = (gy + ry) - y;
+                        const rz_p = dx_p * cosA + dy_p * sinA;
+
+                        if (rz_p > 0.1 && rz_p < range) {
+                            const f = this.focalLength / rz_p;
+                            const rx_p = -dx_p * sinA + dy_p * cosA;
+                            const sx = rx_p * f + (this.canvas.width / 2);
+                            const sy = 0.5 * f + (this.canvas.height / 2); 
+                            faces.push({ type: 'dot', sx, sy, dist: rz_p });
                         }
                     }
                 }
@@ -328,18 +367,18 @@ export class GameEngine {
 
             // ANIMATION OFFSETS (Discrete frames for retro feel)
             const bobFrame = Math.floor((ent.bobTime || 0) * 0.75) % 2; // Swaps every ~1.3s
-            const bobOffset = bobFrame === 0 ? 0 : 6; 
-            
+            const bobOffset = bobFrame === 0 ? 0 : 6;
+
             // Stepped lunge: 0 = normal, 1 = lunged
             const lungeFrame = ent.attackAnimTime > 0 ? 1 : 0;
-            const lunge = lungeFrame * 35; 
+            const lunge = lungeFrame * 35;
 
             if (def.sprite) {
                 // Billboard Sprite Rendering
                 const rx = -dx * sinA + dy * cosA;
-                const f = this.focalLength / (rz - (lunge * 0.01)); 
+                const f = this.focalLength / (rz - (lunge * 0.01));
                 const sx = rx * f + (this.canvas.width / 2);
-                const sy = (this.canvas.height / 2) + bobOffset; 
+                const sy = (this.canvas.height / 2) + bobOffset;
                 const size = f;
 
                 faces.push({
@@ -375,14 +414,14 @@ export class GameEngine {
                 ctx.save();
                 ctx.globalCompositeOperation = 'screen'; // Black becomes transparent
                 const s = f.size;
-                ctx.drawImage(f.sprite, f.sx - s/2, f.sy - s/2, s, s);
+                ctx.drawImage(f.sprite, f.sx - s / 2, f.sy - s / 2, s, s);
                 ctx.restore();
             } else if (f.type === 'vector-box') {
                 // Draw Billboarded Placeholder Box
                 const s = f.size;
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(f.sx - s/2, f.sy - s/2, s, s);
+                ctx.strokeRect(f.sx - s / 2, f.sy - s / 2, s, s);
 
                 // Draw name centered in the box
                 ctx.fillStyle = '#fff';
@@ -390,6 +429,16 @@ export class GameEngine {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(f.name.toUpperCase(), f.sx, f.sy);
+            } else if (f.type === 'dot') {
+                // Draw floor dust
+                const fog = Math.max(0, 1 - (f.dist / this.theme.fogDist));
+                if (fog > 0) {
+                    const [r, g, b] = this.theme.dustColor;
+                    ctx.fillStyle = `rgb(${r * fog},${g * fog},${b * fog})`;
+                    // Scale size with distance (fog is 1 at near, 0 at far)
+                    const s = Math.max(1, Math.floor(this.theme.dustSize * fog));
+                    ctx.fillRect(f.sx, f.sy, s, s);
+                }
             } else {
                 ctx.beginPath();
                 ctx.moveTo(f.x1, f.yT1);
@@ -399,10 +448,41 @@ export class GameEngine {
                 ctx.closePath();
                 ctx.fillStyle = '#000';
                 ctx.fill();
-                ctx.strokeStyle = '#fff';
+
+                // Distance Fog
+                const fog = Math.max(0, 1 - (f.dist / this.theme.fogDist));
+                const [r, g, b] = this.theme.wallColor;
+                ctx.strokeStyle = `rgb(${r * fog},${g * fog},${b * fog})`;
                 ctx.stroke();
 
-                // If it's a door, draw a proper door frame (red)
+                // Perspective Waist-line
+                if (this.theme.showWaistLine) {
+                    const h = this.theme.waistLine;
+                    const wy1 = f.yT1 + (f.yB1 - f.yT1) * h;
+                    const wy2 = f.yT2 + (f.yB2 - f.yT2) * h;
+                    
+                    if (f.isDoor) {
+                        const marginW = 0.20; 
+                        const dxL = f.x1 + (f.x2 - f.x1) * marginW;
+                        const dxR = f.x1 + (f.x2 - f.x1) * (1 - marginW);
+                        const dyL = wy1 + (wy2 - wy1) * marginW;
+                        const dyR = wy1 + (wy2 - wy1) * (1 - marginW);
+
+                        ctx.beginPath();
+                        ctx.moveTo(f.x1, wy1);
+                        ctx.lineTo(dxL, dyL);
+                        ctx.moveTo(dxR, dyR);
+                        ctx.lineTo(f.x2, wy2);
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath();
+                        ctx.moveTo(f.x1, wy1);
+                        ctx.lineTo(f.x2, wy2);
+                        ctx.stroke();
+                    }
+                }
+
+                // If it's a door, draw a proper door frame
                 if (f.isDoor) {
                     // Interpolate coordinates along the face
                     // Door is 60% of wall width, centered; height goes from 15% top margin to floor
@@ -456,10 +536,10 @@ export class GameEngine {
         // 1. Define world points and the face's outward normal
         let w1, w2, nx, ny;
         switch (side) {
-            case 'N': w1={x:gx,   y:gy};   w2={x:gx+1, y:gy};   nx=0;  ny=-1; break;
-            case 'E': w1={x:gx+1, y:gy};   w2={x:gx+1, y:gy+1}; nx=1;  ny=0;  break;
-            case 'S': w1={x:gx+1, y:gy+1}; w2={x:gx,   y:gy+1}; nx=0;  ny=1;  break;
-            case 'W': w1={x:gx,   y:gy+1}; w2={x:gx,   y:gy};   nx=-1; ny=0;  break;
+            case 'N': w1 = { x: gx, y: gy }; w2 = { x: gx + 1, y: gy }; nx = 0; ny = -1; break;
+            case 'E': w1 = { x: gx + 1, y: gy }; w2 = { x: gx + 1, y: gy + 1 }; nx = 1; ny = 0; break;
+            case 'S': w1 = { x: gx + 1, y: gy + 1 }; w2 = { x: gx, y: gy + 1 }; nx = 0; ny = 1; break;
+            case 'W': w1 = { x: gx, y: gy + 1 }; w2 = { x: gx, y: gy }; nx = -1; ny = 0; break;
         }
 
         // 2. Backface culling: only draw if the face is looking at the player
@@ -470,7 +550,7 @@ export class GameEngine {
 
         // 3. Transform to camera space
         const cam = (w) => ({
-            rz:  (w.x - px) * cosA + (w.y - py) * sinA,
+            rz: (w.x - px) * cosA + (w.y - py) * sinA,
             rx: -(w.x - px) * sinA + (w.y - py) * cosA,
         });
 
