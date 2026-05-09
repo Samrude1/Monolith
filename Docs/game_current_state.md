@@ -15,9 +15,9 @@ Welcome. You are taking over a high-quality, vanilla JS DRPG engine. The project
 3.  **Entity Spawning**: Logic is in `systems/level.js`. It parses `.txt` maps and places entities from `EntityDefs`.
 
 ### Critical Next Tasks:
-- [ ] **Inventory System**: The player can stand on items, but there is no `this.player.inventory` array or UI to show it.
-- [ ] **Combat Resolution**: The `attack()` method in `engine.js` finds the target, but doesn't yet reduce HP or trigger death states.
-- [ ] **Level Triggers**: Implement the logic for stairs (`<` and `>`) in `main.js` to call `LevelManager.loadLevel()`.
+- [ ] **Data cleanup**: Consolidate entity data sources so `data/entities/registry.js` is the only active source of truth.
+- [ ] **Asset pass**: Add/verify sprite assets for `spriteFile` entries (`./images/*.png`) or update defs to explicit vector-only rendering.
+- [ ] **Main loop modularization**: Split `main.js` combat/inventory/UI orchestration into smaller modules to reduce regression risk.
 
 ## Project Structure
 - `data/entities/`:

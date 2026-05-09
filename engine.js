@@ -49,7 +49,10 @@ export class GameEngine {
 
     async loadMap(url) {
         const resp = await fetch(url);
-        const text = await resp.text();
+        if (!resp.ok) {
+            throw new Error(`Failed to load map: ${url} (${resp.status})`);
+        }
+        const text = (await resp.text()).replace(/\r/g, '');
         this.map = text.trim().split('\n').map(line => line.split(''));
 
         for (let y = 0; y < this.map.length; y++) {
@@ -173,6 +176,13 @@ export class GameEngine {
             // Initialize instance properties if missing
             if (ent.currentCooldown === undefined) {
                 const def = Entities[ent.monsterType];
+                if (!def) {
+                    if (!ent._missingDefWarned) {
+                        console.warn(`Missing monster definition for "${ent.monsterType}"`);
+                        ent._missingDefWarned = true;
+                    }
+                    continue;
+                }
                 ent.cooldown = def.cooldown || 2000;
                 ent.spd = def.spd || 0.5;
                 ent.atk = def.atk || 5;

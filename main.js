@@ -349,6 +349,10 @@ function handleTake() {
     if (entIndex !== -1) {
         const ent = engine.entities[entIndex];
         const def = EntityDefs[ent.monsterType];
+        if (!def) {
+            addLog(`Unknown item type: ${ent.monsterType}`);
+            return;
+        }
 
         if (ent.monsterType === 'stairs_up' || ent.monsterType === 'stairs_down') {
             addLog("These stairs are far too heavy to carry!");

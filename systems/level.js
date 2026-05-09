@@ -107,6 +107,10 @@ export class LevelManager {
                 const tile = emptyTiles.pop();
                 const type = monsterPool[Math.floor(Math.random() * monsterPool.length)];
                 const def = EntityDefs[type];
+                if (!def) {
+                    console.warn(`Skipping spawn. Missing entity def: ${type}`);
+                    continue;
+                }
 
                 floorEntities.push({
                     type: 'monster',

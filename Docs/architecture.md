@@ -16,8 +16,9 @@
 - **Entity Templates**: Comprehensive RPG stats (HP, ATK, DEF, Weight, Value, HealAmount) shared across all entity types.
 
 ## Systems (`systems/`)
-- **LevelManager**: Handles map parsing (`.txt`), spawning entities from map characters (M, K, C, W, F), and level state.
+- **LevelManager**: Handles floor loading from `data/levels/*.txt`, floor cache/restore, and floor-aware monster + loot spawning.
 - **MonsterLoader**: Parser that converts ASCII-style `.txt` files into 3D vector line segments.
+- **SoundManager**: Lightweight WebAudio wrapper for SFX toggling and playback.
 
 ## UI
 - **Hybrid System**: High-performance Canvas for 3D world + DOM overlay for stats and message logs.
