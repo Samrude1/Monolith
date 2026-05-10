@@ -10,29 +10,82 @@ A professional, high-performance pseudo-3D dungeon crawler engine built with Van
 
 ### Key Features
 - **Custom Pseudo-3D Engine**: Fast, software-based rendering with sub-pixel precision.
-- **Advanced Sprite System**: High-quality billboard rendering for entities and wall decals with perspective-correct `1/Z` interpolation.
-- **Dynamic Theme Architecture**: Configurable visuals per floor, including fog, wall colors, and dust particles.
-- **Unified RPG Data Layer**: A centralized entity registry (`data/entities/`) for monsters and loot, using a standard template for HP, stats, and behavior.
-- **Retro Aesthetic**: Sharp pixel-art rendering with disabled smoothing and classic "wireframe-ish" waist-line details.
+- **Advanced Sprite System**: High-quality billboard rendering for entities and wall decals.
+- **Dynamic Theme Architecture**: Configurable visuals per floor (fog, colors, particles).
+- **Unified RPG Data Layer**: Centralized entity registry for monsters and loot.
+- **Retro Aesthetic**: Sharp pixel-art rendering with modern "wireframe-ish" details.
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to get the game running on your local machine.
+
+### Prerequisites
+- [Node.js](https://nodejs.org/) (Latest LTS recommended)
+- [Git](https://git-scm.com/)
+
+### Installation
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Samrude1/Retro_Adventure.git
+   cd Retro_Adventure
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Play:**
+   Open your browser and navigate to `http://localhost:5173` (or the port shown in your terminal).
+
+---
+
+## 🕹️ How to Play
+
+Explore the depths of the Monolith, defeat monsters, and find your way to the deeper floors.
+
+### Controls
+| Action | Keyboard | UI Button |
+| :--- | :--- | :--- |
+| **Move Forward** | `W` / `↑` | `UP` |
+| **Turn Left** | `A` / `←` | `LEFT` |
+| **Turn Right** | `D` / `→` | `RIGHT` |
+| **Interact / Open** | `Space` | `OPEN` |
+| **Attack** | - | `ATTACK` |
+| **Defend / Parry** | - | `DEFEND` |
+| **Pick Up Item** | - | `TAKE` |
+| **Inventory** | - | `INV` |
+
+### Gameplay Mechanics
+- **Exploration**: Use the movement keys to navigate the grid-based dungeon. Look for stairs to go up (`<`) or down (`>`).
+- **Combat**: When facing a monster, use **ATTACK** to strike. Use **DEFEND** to raise your guard—timing it right can result in a **Perfect Parry**, dealing massive counter-damage!
+- **Inventory**: Pick up items (gold, weapons, food) using **TAKE**. Open your **INV** to equip gear or consume items to restore health.
+- **Leveling**: Gain XP by defeating monsters to increase your Max HP and stats.
+
+---
 
 ## 🛠️ Technical Stack
 - **Engine**: Vanilla ES6+ JavaScript.
 - **Graphics**: HTML5 Canvas (Direct context manipulation).
+- **Tooling**: [Vite](https://vitejs.dev/) for fast development and bundling.
 - **Architecture**: Modular "Manager" pattern (Engine, LevelManager, SoundManager).
-- **Data**: JSON/Registry-based entity system for easy balancing and expansion.
 
-## 🚀 Handover Status (2026-05-09)
-This project is currently in a "Solid Core" state. The rendering and entity systems are fully functional. The codebase is prepared for a transition to a new development environment (e.g., Cursor/Claude).
+---
 
-### Current Priorities for the New Model:
-1.  **Combat & Inventory Logic**: Implementing the state changes for attacking and item management.
-2.  **Map/Minimap**: Adding a navigation UI element.
-3.  **Persistence**: Integrating `localStorage` for floor progress and player stats.
+## 📅 Status (2026-05-10)
+This project is currently in a "Solid Core" state. The rendering and entity systems are fully functional.
 
-## 🕹️ Running Locally
-1. Clone the repository.
-2. Run `npm run dev` to start the local development server.
-3. Open `http://localhost:3000` (or the port specified in the console).
+### Current Priorities:
+1. **Combat & Inventory Logic**: Refining state changes for advanced item management.
+2. **Map/Minimap**: Adding a navigation UI element.
+3. **Persistence**: Integrating `localStorage` for floor progress.
 
 ---
 *Architected for expansion. Optimized for performance.*
