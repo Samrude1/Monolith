@@ -667,7 +667,7 @@ export class GameEngine {
                     const dyBR = lerpYB(dR);
 
                     ctx.save();
-                    ctx.strokeStyle = '#fff';
+                    // Reuse the wall color (including fog) already set in strokeStyle
                     ctx.lineWidth = 2;
                     ctx.lineJoin = 'round';
 
