@@ -10,8 +10,10 @@ A professional, high-performance pseudo-3D dungeon crawler engine built with Van
 
 ### Key Features
 - **Custom Pseudo-3D Engine**: Fast, software-based rendering with sub-pixel precision.
-- **Advanced Sprite System**: High-quality billboard rendering for entities and wall decals.
-- **Dynamic Theme Architecture**: Configurable visuals per floor (fog, colors, particles).
+- **Automated Texture System**: Dynamic theme-based texture mapping for walls, floors, ceilings, and doors.
+- **Advanced Sprite System**: High-quality billboard rendering with automatic chromakey background removal.
+- **Enhanced UI Layout**: Optimized sidebar panels with dedicated XP, Level, and Gold tracking.
+- **Dynamic Theme Architecture**: Configurable visuals per floor (fog, textures, particles).
 - **Unified RPG Data Layer**: Centralized entity registry for monsters and loot.
 - **Retro Aesthetic**: Sharp pixel-art rendering with modern "wireframe-ish" details.
 
@@ -79,13 +81,13 @@ Explore the depths of the Monolith, defeat monsters, and find your way to the de
 
 ---
 
-## 📅 Status (2026-05-10)
-This project is currently in a "Solid Core" state. The rendering and entity systems are fully functional.
+## 📅 Status (2026-05-11)
+The engine has evolved into a "Textured Core" state. It now supports full texture mapping and refined UI layouts.
 
 ### Current Priorities:
-1. **Combat & Inventory Logic**: Refining state changes for advanced item management.
-2. **Map/Minimap**: Adding a navigation UI element.
-3. **Persistence**: Integrating `localStorage` for floor progress.
+1. **Procedural Elements**: Adding map generation capabilities for infinite dungeons.
+2. **Persistence**: Integrating `localStorage` for floor progress and character state.
+3. **Map/Minimap**: Adding a navigation UI element.
 
 ---
 *Architected for expansion. Optimized for performance.*

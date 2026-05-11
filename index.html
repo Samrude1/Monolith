@@ -8,6 +8,20 @@
 </head>
 <body>
     <div id="game-wrapper">
+        <!-- Story Overlay -->
+        <div id="story-overlay" class="story-overlay hidden">
+            <div id="story-header" class="story-header">NARRATIVE</div>
+            <div class="story-content-box">
+                <div id="story-img-container" class="story-illustration">
+                    <!-- Image will be injected here -->
+                </div>
+                <div id="story-text" class="story-text">
+                    ...
+                </div>
+            </div>
+            <div class="story-footer">Press ENTER to continue</div>
+        </div>
+
         <!-- Main Menu Overlay -->
         <div id="main-menu" class="overlay">
             <div class="menu-content">
@@ -63,7 +77,12 @@
                     <div class="stat-row small">DMG: <span id="val-dmg">0</span></div>
                     <div class="stat-row small">DEF: <span id="val-def">0</span></div>
                     <div class="stat-row small">GOLD: <span id="val-gold">0</span></div>
-                    <div class="stat-row small">XP: <span id="val-xp">0</span></div>
+                </div>
+
+                <div class="panel-header">PROGRESS</div>
+                <div class="stat-group xp-box">
+                    <div class="xp-row">XP: <span id="val-xp">0</span></div>
+                    <div class="xp-row level">LVL: <span id="val-level">1</span></div>
                 </div>
             </div>
 
@@ -109,19 +128,22 @@
                     <button id="btn-attack" class="rpg-btn">ATTACK</button>
                     <button id="btn-defend" class="rpg-btn">DEFEND</button>
                     <button id="btn-take" class="rpg-btn">TAKE</button>
-                    <button id="btn-open" class="rpg-btn">OPEN</button>
+                    <button id="btn-open" class="rpg-btn">USE</button>
                     <button id="btn-inv" class="rpg-btn">INV</button>
                 </div>
                 
                 <div id="movement-controls">
-                    <div class="dpad">
-                        <button id="btn-up" class="dpad-btn up">↑</button>
-                        <div class="dpad-mid">
-                            <button id="btn-left" class="dpad-btn left">←</button>
-                            <button id="btn-right" class="dpad-btn right">→</button>
-                        </div>
+                    <div class="control-grid">
+                        <button id="btn-turn-left" class="ctrl-btn">Q</button>
+                        <button id="btn-up" class="ctrl-btn">W</button>
+                        <button id="btn-turn-right" class="ctrl-btn">E</button>
+                        
+                        <button id="btn-strafe-left" class="ctrl-btn">A</button>
+                        <button id="btn-down" class="ctrl-btn">S</button>
+                        <button id="btn-strafe-right" class="ctrl-btn">D</button>
                     </div>
                 </div>
+
             </div>
         </div>
 

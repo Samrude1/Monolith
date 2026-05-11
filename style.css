@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
     --bg-color: #000000;
     --line-color: #ffffff;
     --glow-color: rgba(255, 255, 255, 0.4);
-    --font-main: 'VT323', monospace;
+    --font-main: 'Press Start 2P', cursive;
     --panel-bg: rgba(0, 0, 0, 0.9);
 }
 
@@ -13,6 +13,10 @@
     padding: 0;
     box-sizing: border-box;
     user-select: none;
+}
+
+html, body, #game-wrapper, button, .inv-slot {
+    cursor: crosshair !important;
 }
 
 body {
@@ -32,11 +36,11 @@ body {
     width: 1200px;
     height: 800px;
     border: 3px solid var(--line-color);
-    box-shadow: 0 0 50px #000;
     position: relative;
     background: var(--bg-color);
     transform-origin: center center;
     transition: transform 0.3s ease-out;
+    filter: grayscale(100%) contrast(1.2); /* Pure B&W feel */
 }
 
 /* Overlays */
@@ -56,14 +60,12 @@ body {
     border: 3px double var(--line-color);
     padding: 60px;
     background: #000;
-    box-shadow: 0 0 30px rgba(255,255,255,0.1);
 }
 
 .rpg-title {
-    font-size: 80px;
-    letter-spacing: 10px;
+    font-size: 48px;
+    letter-spacing: 5px;
     margin-bottom: 40px;
-    text-shadow: 0 0 20px var(--glow-color);
 }
 
 .menu-buttons {
@@ -127,11 +129,11 @@ body {
 }
 
 .panel-header {
-    font-size: 32px;
+    font-size: 16px;
     text-align: center;
     border-bottom: 2px solid var(--line-color);
     margin: 20px 0 10px 0;
-    padding-bottom: 5px;
+    padding-bottom: 8px;
     color: var(--line-color);
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -146,20 +148,44 @@ body {
 }
 
 .stat-row {
-    font-size: 30px;
-    margin-bottom: 8px;
+    font-size: 14px;
+    margin-bottom: 12px;
     color: #fff;
-    font-weight: bold;
 }
 
 .stat-row.small {
-    font-size: 26px;
-    margin-bottom: 5px;
+    font-size: 12px;
+    margin-bottom: 8px;
 }
 
 .stat-row span {
     color: #fff;
-    text-shadow: 0 0 8px var(--glow-color);
+}
+/* Specialized Progress Box */
+.xp-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    margin-top: 5px;
+    text-align: center;
+}
+
+.xp-row {
+    font-size: 11px;
+    margin-bottom: 5px;
+    color: #aaa;
+}
+
+.xp-row span {
+    color: #fff;
+    font-size: 14px;
+}
+
+.xp-row.level {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
 .action-buttons {
@@ -173,8 +199,8 @@ body {
     color: var(--line-color);
     border: 2px solid var(--line-color);
     font-family: var(--font-main);
-    font-size: 24px;
-    padding: 8px;
+    font-size: 14px;
+    padding: 10px;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -182,7 +208,6 @@ body {
 .rpg-btn:hover {
     background: var(--line-color);
     color: var(--bg-color);
-    box-shadow: 0 0 10px var(--line-color);
 }
 
 .rpg-btn:active {
@@ -194,32 +219,33 @@ body {
     padding-top: 20px;
 }
 
-.dpad {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
-.dpad-mid {
-    display: flex;
-    gap: 30px;
-}
-
-.dpad-btn {
-    width: 45px;
-    height: 45px;
+.ctrl-btn {
+    aspect-ratio: 1;
     background: transparent;
     color: var(--line-color);
     border: 2px solid var(--line-color);
     font-family: var(--font-main);
-    font-size: 28px;
+    font-size: 14px;
     cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.dpad-btn:hover {
+.ctrl-btn:hover {
     background: var(--line-color);
     color: var(--bg-color);
+}
+
+.ctrl-btn:active {
+    transform: scale(0.9);
 }
 
 #info-bar {
@@ -236,8 +262,9 @@ body {
 }
 
 .message {
-    font-size: 22px;
-    margin-bottom: 4px;
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 6px;
     animation: fadeIn 0.3s ease-out;
 }
 
@@ -246,18 +273,16 @@ body {
 }
 
 #game-over-overlay {
-    background: rgba(139, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-    border: 5px double #f00;
+    background: rgba(40, 40, 40, 0.95);
+    border: 5px double #fff;
 }
 
 .death-msg {
     font-size: 80px;
-    color: #f00;
-    text-shadow: 0 0 20px #000;
+    color: #fff;
     margin-bottom: 10px;
     letter-spacing: 5px;
-    animation: pulseRed 2s infinite;
+    animation: pulseWhite 2s infinite;
 }
 
 .death-sub {
@@ -266,15 +291,15 @@ body {
     margin-bottom: 40px;
 }
 
-@keyframes pulseRed {
-    0% { transform: scale(1); text-shadow: 0 0 10px #f00; }
-    50% { transform: scale(1.05); text-shadow: 0 0 30px #f00; }
-    100% { transform: scale(1); text-shadow: 0 0 10px #f00; }
+@keyframes pulseWhite {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
 #inventory-overlay {
     position: absolute;
-    top: 50%;
+    top: 42%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 600px;
@@ -290,7 +315,7 @@ body {
 .inventory-header {
     display: flex;
     justify-content: space-between;
-    font-size: 32px;
+    font-size: 18px;
     border-bottom: 2px solid var(--line-color);
     margin-bottom: 20px;
     padding-bottom: 10px;
@@ -326,7 +351,7 @@ body {
 
 .inv-slot.selected {
     background: rgba(255, 255, 255, 0.2);
-    box-shadow: inset 0 0 10px var(--line-color);
+    border-color: #fff;
 }
 
 .inv-slot img {
@@ -342,15 +367,16 @@ body {
 }
 
 #item-name {
-    font-size: 28px;
-    margin-bottom: 5px;
+    font-size: 16px;
+    margin-bottom: 8px;
     color: #fff;
 }
 
 #item-desc {
-    font-size: 20px;
+    font-size: 12px;
     color: #ccc;
     margin-bottom: 10px;
+    line-height: 1.4;
 }
 
 #item-actions {
@@ -378,8 +404,87 @@ body {
     display: block;
     position: absolute;
     top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(200, 200, 200, 0.01), rgba(150, 150, 150, 0.02));
     z-index: 1000;
     background-size: 100% 4px, 3px 100%;
     pointer-events: none;
+}
+/* Narrative / Story Overlay */
+.story-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px;
+    max-height: 550px;
+    background: #000;
+    border: 4px double #fff;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    z-index: 700;
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+    animation: storyFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.story-header {
+    font-size: 20px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 20px;
+    text-decoration: underline;
+    letter-spacing: 3px;
+}
+
+.story-content-box {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.story-illustration {
+    width: 200px;
+    height: 200px;
+    border: 2px solid #fff;
+    flex-shrink: 0;
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.story-illustration img {
+    max-width: 100%;
+    max-height: 100%;
+    image-rendering: pixelated;
+}
+
+.story-text {
+    flex: 1;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #fff;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.story-footer {
+    margin-top: 25px;
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 1px;
+    animation: blink 1s infinite;
+}
+
+@keyframes storyFadeIn {
+    from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
 }

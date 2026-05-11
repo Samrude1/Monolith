@@ -21,10 +21,20 @@ export class GameEngine {
             animProgress: 1.0   // 1.0 = idle / ready for input
         };
 
+        this.entities = [];
         this.focalLength = 400;
         this.canvas.width = 800;
         this.canvas.height = 650;
-        this.entities = [];
+
+        // Offscreen buffer for floor/ceiling rendering (Downsampled for retro look and speed)
+        this.floorBuffer = document.createElement('canvas');
+        this.floorBuffer.width = Math.floor(this.canvas.width / 4); 
+        this.floorBuffer.height = Math.floor(this.canvas.height / 4);
+        this.floorCtx = this.floorBuffer.getContext('2d');
+        this.floorImageData = this.floorCtx.createImageData(this.floorBuffer.width, this.floorBuffer.height);
+
+
+
 
         // Default Theme
         this.theme = {
@@ -39,6 +49,52 @@ export class GameEngine {
 
     setTheme(config) {
         this.theme = { ...this.theme, ...config };
+        
+        // Auto-load textures if defined as strings
+        if (config.wallTexture && typeof config.wallTexture === 'string') {
+            const img = new Image();
+            img.src = config.wallTexture;
+            this.theme.wallTextureImg = img;
+        }
+        if (config.floorTexture && typeof config.floorTexture === 'string') {
+            const img = new Image();
+            img.src = config.floorTexture;
+            this.theme.floorTextureImg = img;
+        }
+        if (config.ceilingTexture && typeof config.ceilingTexture === 'string') {
+            const img = new Image();
+            img.src = config.ceilingTexture;
+            this.theme.ceilingTextureImg = img;
+        }
+        if (config.doorTexture && typeof config.doorTexture === 'string') {
+            const img = new Image();
+            img.src = config.doorTexture;
+            this.theme.doorTextureImg = img;
+        }
+
+    }
+
+    /**
+     * Converts black pixels (0,0,0) to transparent alpha.
+     * Useful for placeholder sprites that don't have an alpha channel.
+     */
+    removeBlackBackground(img) {
+        if (!img || img.width === 0) return img;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            // Pure black or near black becomes transparent
+            if (data[i] < 10 && data[i+1] < 10 && data[i+2] < 10) {
+                data[i+3] = 0;
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        return canvas;
     }
 
     // Stable "random" for floor noise
@@ -68,12 +124,10 @@ export class GameEngine {
     }
 
     // Returns true=moved, false=wall, null=busy
-    moveForward() {
+    // General movement helper
+    tryMove(dx, dy) {
         if (this.player.animProgress < 1.0) return null;
 
-        const dir = this.player.targetDir;
-        const dx = [0, 1, 0, -1][dir];
-        const dy = [-1, 0, 1, 0][dir];
         const tx = Math.floor(this.player.targetX + dx);
         const ty = Math.floor(this.player.targetY + dy);
 
@@ -84,7 +138,7 @@ export class GameEngine {
             e.type === 'monster' && Math.floor(e.x) === tx && Math.floor(e.y) === ty
         );
 
-        if (isMonsterBlocking) return false;
+        if (isMonsterBlocking) return 'MONSTER';
 
         // Allow walking through floor tiles (.) open doors (d) and stairs (<, >)
         if (targetCell === '.' || targetCell === 'd' || targetCell === '<' || targetCell === '>') {
@@ -94,9 +148,34 @@ export class GameEngine {
             this.player.targetX = tx + 0.5;
             this.player.targetY = ty + 0.5;
             this.player.animProgress = 0.0;
-            return targetCell; // Return the cell we stepped onto
+            return targetCell; 
         }
         return false;
+    }
+
+    moveForward() {
+        const dir = this.player.targetDir;
+        const dx = [0, 1, 0, -1][dir];
+        const dy = [-1, 0, 1, 0][dir];
+        return this.tryMove(dx, dy);
+    }
+
+    moveBackward() {
+        const dir = this.player.targetDir;
+        const dx = [0, -1, 0, 1][dir]; // Inverse of forward
+        const dy = [1, 0, -1, 0][dir];
+        return this.tryMove(dx, dy);
+    }
+
+    strafe(side) {
+        const dir = this.player.targetDir;
+        // Strafe Left: if facing North(0), move West(-1,0). if East(1), move North(0,-1). etc.
+        // Rotation for side=-1 (Left): (dir - 1 + 4) % 4
+        // Rotation for side=1 (Right): (dir + 1) % 4
+        const strafeDir = (dir + (side === -1 ? 3 : 1)) % 4;
+        const dx = [0, 1, 0, -1][strafeDir];
+        const dy = [-1, 0, 1, 0][strafeDir];
+        return this.tryMove(dx, dy);
     }
 
     // Returns true=rotated, false=busy
@@ -310,7 +389,11 @@ export class GameEngine {
         const cosA = Math.cos(angle);
         const sinA = Math.sin(angle);
 
+        // --- DRAW FLOOR AND CEILING (TEXTURED) ---
+        this.renderFloorAndCeiling(x, y, angle, cosA, sinA);
+
         // 2. Collect visible wall faces and objects within view range
+
         const faces = [];
         const range = 8; // Render distance (fog limit)
         for (let dy = -range; dy <= range; dy++) {
@@ -340,6 +423,7 @@ export class GameEngine {
 
                         const fd = this.getFace(gx, gy, s.face, x, y, cosA, sinA);
                         if (fd) {
+                            fd.cell = cell; // Store the cell type (#, D, or d)
                             fd.isDoor = (cell === 'D' || cell === 'd');
                             faces.push(fd);
                         }
@@ -486,11 +570,13 @@ export class GameEngine {
                 // Automate floor placement if onFloor is true
                 let sy = (this.canvas.height / 2) + bobOffset;
                 const scale = def.scale || 1;
+                const yOffset = def.yOffset || 0; // Fine-tune vertical position
+                
                 if (def.onFloor) {
                     // Formula to touch floor: horizon + (0.5*f) - (size/2)
-                    sy += f * (0.5 - scale / 2);
+                    sy += f * (0.5 - scale / 2 + yOffset);
                 } else {
-                    sy += (def.anchorY || 0) * f;
+                    sy += (def.anchorY || 0 + yOffset) * f;
                 }
                 const size = f * scale;
                 
@@ -525,35 +611,48 @@ export class GameEngine {
             if (f.type === 'sprite') {
                 // Draw PNG Sprite
                 ctx.save();
-                ctx.globalCompositeOperation = 'screen'; // Black becomes transparent
+                ctx.globalCompositeOperation = 'source-over'; // Opaque sprites
                 const img = f.sprite;
-                if (!img || !img.complete || img.naturalWidth === 0) {
+                
+                // Canvas elements don't have .complete, so we check if it's either a complete Image with dimensions or a Canvas
+                const isReady = img && ((img.complete && img.naturalWidth > 0) || img instanceof HTMLCanvasElement);
+                if (!isReady) {
                     ctx.restore();
                     continue;
                 }
                 const aspect = img.width / img.height;
                 const h = f.size;
                 const w = h * aspect;
+                
+                const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
+                ctx.globalAlpha = fog;
+                
+                // Draw image
                 ctx.drawImage(img, f.sx - w / 2, f.sy - h / 2, w, h);
+                
                 ctx.restore();
             } else if (f.type === 'wall-decal') {
                 const screenWidth = f.x2 - f.x1;
                 const img = f.sprite;
-                if (!img || !img.complete || img.naturalWidth === 0 || screenWidth <= 0.5) continue;
+                const isReady = img && ((img.complete && img.naturalWidth > 0) || img instanceof HTMLCanvasElement);
+                if (!isReady || screenWidth <= 0.5) continue;
                 
+                
+                // Draw decal with fog
                 ctx.save();
-                // Käytetään 'screen' jotta musta tausta muuttuu läpinäkyväksi (kuten spriteissä)
-                ctx.globalCompositeOperation = 'screen'; 
+                ctx.globalCompositeOperation = 'source-over'; 
+                ctx.filter = 'none'; 
+                
+                const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
+                ctx.globalAlpha = fog;
+
                 
                 const sliceWidth = 1;
                 for (let sx = 0; sx < screenWidth; sx += sliceWidth) {
                     const t = sx / screenWidth;
-                    
-                    // Perspective correct 1/Z interpolation for U coordinate (textures)
                     const z_inv = (1 / f.z1) * (1 - t) + (1 / f.z2) * t;
                     const u = ((f.u1 / f.z1) * (1 - t) + (f.u2 / f.z2) * t) / z_inv;
                     
-                    // Linear interpolation for vertical screen coordinates
                     const topY = f.yT1 + (f.yT2 - f.yT1) * t;
                     const bottomY = f.yB1 + (f.yB2 - f.yB1) * t;
                     const wallHeight = bottomY - topY;
@@ -562,15 +661,16 @@ export class GameEngine {
                     const cy = (topY + bottomY) / 2;
                     const dy = cy + (f.vOffset * wallHeight) - (dh / 2);
                     
-                    const sourceX = Math.floor(u * img.width);
+                    const sourceX = (u * img.width) | 0;
                     const clampedSx = Math.max(0, Math.min(img.width - 1, sourceX));
                     
                     ctx.drawImage(
                         img,
                         clampedSx, 0, 1, img.height,
-                        f.x1 + sx, dy, sliceWidth, dh
+                        f.x1 + sx, dy, 1.5, dh + 1
                     );
                 }
+
                 ctx.restore();
             } else if (f.type === 'vector-box') {
                 // Draw Billboarded Placeholder Box
@@ -589,14 +689,15 @@ export class GameEngine {
                 // Draw floor dust
                 const fog = Math.max(0, 1 - (f.dist / this.theme.fogDist));
                 if (fog > 0) {
-                    const [r, g, b] = this.theme.dustColor;
-                    ctx.fillStyle = `rgb(${r * fog},${g * fog},${b * fog})`;
+                    const gray = Math.floor(150 * fog);
+                    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
                     // Scale size with distance (fog is 1 at near, 0 at far)
                     const s = Math.max(1, Math.floor(this.theme.dustSize * fog));
                     ctx.fillRect(f.sx, f.sy, s, s);
                 }
             } else {
                 ctx.beginPath();
+                ctx.strokeStyle = 'rgba(0,0,0,0)'; // RESET to transparent to prevent any leaks
                 ctx.moveTo(f.x1, f.yT1);
                 ctx.lineTo(f.x2, f.yT2);
                 ctx.lineTo(f.x2, f.yB2);
@@ -605,32 +706,97 @@ export class GameEngine {
                 ctx.fillStyle = '#000';
                 ctx.fill();
 
-                // Distance Fog
-                const fog = Math.max(0, 1 - (f.dist / this.theme.fogDist));
-                const [r, g, b] = this.theme.wallColor;
-                ctx.strokeStyle = `rgb(${r * fog},${g * fog},${b * fog})`;
-                ctx.stroke();
 
-                // Perspective Waist-line
-                if (this.theme.showWaistLine) {
-                    const h = this.theme.waistLine;
-                    const wy1 = f.yT1 + (f.yB1 - f.yT1) * h;
-                    const wy2 = f.yT2 + (f.yB2 - f.yT2) * h;
+                // --- TEXTURE RENDERING (The Retro Way) ---
+                // Texture walls (#) and all door types (D, d)
+                const isWall = f.cell === '#';
+                const isDoor = f.cell === 'D' || f.cell === 'd';
+                
+                const activeTex = isDoor ? (this.theme.doorTextureImg || this.theme.wallTextureImg) : (isWall ? this.theme.wallTextureImg : null);
+                
+                if (activeTex?.complete && activeTex.naturalWidth > 0) {
+                    ctx.beginPath(); 
+                    const img = activeTex;
                     
-                    if (f.isDoor) {
-                        const marginW = 0.20; 
-                        const dxL = f.x1 + (f.x2 - f.x1) * marginW;
-                        const dxR = f.x1 + (f.x2 - f.x1) * (1 - marginW);
-                        const dyL = wy1 + (wy2 - wy1) * marginW;
-                        const dyR = wy1 + (wy2 - wy1) * (1 - marginW);
+                    let xL = f.x1, xR = f.x2;
+                    let zL = f.z1, zR = f.z2;
+                    let uL = f.u1, uR = f.u2;
+                    let yTL = f.yT1, yTR = f.yT2;
+                    let yBL = f.yB1, yBR = f.yB2;
 
+                    if (xL > xR) {
+                        [xL, xR] = [xR, xL];
+                        [zL, zR] = [zR, zL];
+                        [uL, uR] = [uR, uL];
+                        [yTL, yTR] = [yTR, yTL];
+                        [yBL, yBR] = [yBR, yBL];
+                    }
+
+                    const xL_int = xL | 0;
+                    const xR_int = xR | 0;
+                    const screenWidth = xR_int - xL_int;
+                    
+                    if (screenWidth > 0) {
+                        const sliceWidth = 2; 
+                        for (let sx = 0; sx < screenWidth; sx += sliceWidth) {
+                            const t = sx / screenWidth;
+                            const z_inv = (1 / zL) * (1 - t) + (1 / zR) * t;
+                            const u = ((uL / zL) * (1 - t) + (uR / zR) * t) / z_inv;
+                            const topY = yTL + (yTR - yTL) * t;
+                            const bottomY = yBL + (yBR - yBL) * t;
+                            const sourceX = (u * img.width) | 0;
+                            const clampedSx = Math.max(0, Math.min(img.width - 1, sourceX));
+                            
+                            ctx.drawImage(
+                                img,
+                                clampedSx, 0, 1, img.height,
+                                xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1
+                            );
+                        }
+
+                        // If using wall texture as a fallback for a door, darken it
+                        if (f.isDoor && img === this.theme.wallTextureImg) {
+                            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                            ctx.beginPath();
+                            ctx.moveTo(xL_int, yTL); ctx.lineTo(xR_int + 2, yTR);
+                            ctx.lineTo(xR_int + 2, yBR); ctx.lineTo(xL_int, yBL);
+                            ctx.fill();
+
+                            // Add a subtle frame for the fallback door
+                            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+
+                        // HIGH-FIDELITY MULTI-STOP FOG
+                        const grad = ctx.createLinearGradient(xL_int, 0, xR_int + 2, 0);
+                        const stopStep = 16; 
+                        const stopCount = Math.max(2, (screenWidth / stopStep) | 0);
+                        for (let i = 0; i <= stopCount; i++) {
+                            const t = i / stopCount;
+                            const z_inv = (1 / zL) * (1 - t) + (1 / zR) * t;
+                            const actualZ = 1 / z_inv;
+                            const sliceFog = Math.max(0, 1 - ((actualZ * 1.4) / this.theme.fogDist));
+                            grad.addColorStop(t, `rgba(0,0,0,${1 - sliceFog})`);
+                        }
+                        ctx.fillStyle = grad;
                         ctx.beginPath();
-                        ctx.moveTo(f.x1, wy1);
-                        ctx.lineTo(dxL, dyL);
-                        ctx.moveTo(dxR, dyR);
-                        ctx.lineTo(f.x2, wy2);
-                        ctx.stroke();
-                    } else {
+                        ctx.moveTo(xL_int, yTL); ctx.lineTo(xR_int + 2, yTR);
+                        ctx.lineTo(xR_int + 2, yBR); ctx.lineTo(xL_int, yBL);
+                        ctx.fill();
+                    }
+                } else if (!f.isDoor) {
+                    // Fallback to wireframe if no texture and NOT a door
+                    const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
+                    const gray = Math.floor(255 * fog);
+                    ctx.strokeStyle = `rgb(${gray},${gray},${gray})`;
+                    ctx.stroke();
+
+                    // Perspective Waist-line
+                    if (this.theme.showWaistLine) {
+                        const h = this.theme.waistLine;
+                        const wy1 = f.yT1 + (f.yB1 - f.yT1) * h;
+                        const wy2 = f.yT2 + (f.yB2 - f.yB1) * h;
                         ctx.beginPath();
                         ctx.moveTo(f.x1, wy1);
                         ctx.lineTo(f.x2, wy2);
@@ -638,49 +804,46 @@ export class GameEngine {
                     }
                 }
 
-                // If it's a door, draw a proper door frame
-                if (f.isDoor) {
-                    // Interpolate coordinates along the face
-                    // Door is 60% of wall width, centered; height goes from 15% top margin to floor
-                    const marginW = 0.20; // 20% margin each side → 60% door width
-                    const marginTop = 0.12; // 12% from ceiling → door top
+                // Door fallback (only if door texture is NOT available)
+                const isDoorMissingTexture = (isDoor && !this.theme.doorTextureImg?.complete);
 
-                    // Helper to lerp between left and right edge at a given fraction
+                if (isDoorMissingTexture) {
+                    const marginW = 0.20; 
+                    const marginTop = 0.12; 
                     const lerpX = (t) => f.x1 + (f.x2 - f.x1) * t;
-                    const lerpYT = (t) => f.yT1 + (f.yT2 - f.yT1) * t; // top edge at t
-                    const lerpYB = (t) => f.yB1 + (f.yB2 - f.yB1) * t; // bottom edge at t
+                    const lerpYT = (t) => f.yT1 + (f.yT2 - f.yT1) * t;
+                    const lerpYB = (t) => f.yB1 + (f.yB2 - f.yB1) * t;
+                    const dxL = lerpX(marginW);
+                    const dxR = lerpX(1 - marginW);
+                    const dyTL = lerpYT(marginW) + (lerpYB(marginW) - lerpYT(marginW)) * marginTop;
+                    const dyTR = lerpYT(1 - marginW) + (lerpYB(1 - marginW) - lerpYT(1 - marginW)) * marginTop;
+                    const dyBL = lerpYB(marginW);
+                    const dyBR = lerpYB(1 - marginW);
 
-                    // Door frame corners in screen space
-                    const dL = marginW;           // door left fraction
-                    const dR = 1 - marginW;       // door right fraction
+                    // 1. Draw Door Background (Grey hole)
+                    const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
+                    const doorGray = Math.floor(40 * fog); // Dark grey, fogged
+                    ctx.fillStyle = `rgb(${doorGray},${doorGray},${doorGray})`;
+                    ctx.beginPath();
+                    ctx.moveTo(dxL, dyBL);
+                    ctx.lineTo(dxL, dyTL);
+                    ctx.lineTo(dxR, dyTR);
+                    ctx.lineTo(dxR, dyBR);
+                    ctx.fill();
 
-                    // X coords
-                    const dxL = lerpX(dL);
-                    const dxR = lerpX(dR);
-
-                    // Top of door — lerped top edge + margin down
-                    const dyTL = lerpYT(dL) + (lerpYB(dL) - lerpYT(dL)) * marginTop;
-                    const dyTR = lerpYT(dR) + (lerpYB(dR) - lerpYT(dR)) * marginTop;
-
-                    // Bottom of door — at the floor (yB)
-                    const dyBL = lerpYB(dL);
-                    const dyBR = lerpYB(dR);
-
-                    ctx.save();
-                    // Reuse the wall color (including fog) already set in strokeStyle
+                    // 2. Draw Door Frame
+                    const frameGray = Math.floor(120 * fog); 
+                    ctx.strokeStyle = `rgb(${frameGray},${frameGray},${frameGray})`;
                     ctx.lineWidth = 2;
                     ctx.lineJoin = 'round';
-
-                    // Draw the door frame: left post, top bar, right post (U-shape, open at bottom)
                     ctx.beginPath();
-                    ctx.moveTo(dxL, dyBL);  // bottom-left
-                    ctx.lineTo(dxL, dyTL);  // up left post
-                    ctx.lineTo(dxR, dyTR);  // across top bar
-                    ctx.lineTo(dxR, dyBR);  // down right post
+                    ctx.moveTo(dxL, dyBL);
+                    ctx.lineTo(dxL, dyTL);
+                    ctx.lineTo(dxR, dyTR);
+                    ctx.lineTo(dxR, dyBR);
                     ctx.stroke();
-
-                    ctx.restore();
                 }
+
             }
         }
 
@@ -717,12 +880,15 @@ export class GameEngine {
         const NEAR = 0.1;
         if (c1.rz < NEAR && c2.rz < NEAR) return null;
 
+        let u1 = 0, u2 = 1;
         if (c1.rz < NEAR) {
             const t = (NEAR - c1.rz) / (c2.rz - c1.rz);
             c1 = { rz: NEAR, rx: c1.rx + (c2.rx - c1.rx) * t };
+            u1 = t;
         } else if (c2.rz < NEAR) {
             const t = (NEAR - c2.rz) / (c1.rz - c2.rz);
             c2 = { rz: NEAR, rx: c2.rx + (c1.rx - c2.rx) * t };
+            u2 = 1 - t;
         }
 
         const proj = (c) => {
@@ -736,9 +902,114 @@ export class GameEngine {
         const s2 = proj(c2);
 
         return {
-            x1: s1.sx, yT1: s1.yT, yB1: s1.yB,
-            x2: s2.sx, yT2: s2.yT, yB2: s2.yB,
+            x1: s1.sx, yT1: s1.yT, yB1: s1.yB, z1: c1.rz, u1: u1,
+            x2: s2.sx, yT2: s2.yT, yB2: s2.yB, z2: c2.rz, u2: u2,
             dist: (c1.rz + c2.rz) / 2,
         };
     }
+
+    /**
+     * Renders textured floor and ceiling using horizontal scanlines.
+     * Uses a low-res offscreen buffer for performance and retro look.
+     */
+    renderFloorAndCeiling(px, py, angle, cosA, sinA) {
+        const floorImg = this.theme.floorTextureImg;
+        const ceilImg = this.theme.ceilingTextureImg;
+        const floorData = this.getTextureData(floorImg);
+        const ceilData = this.getTextureData(ceilImg);
+
+        if (!floorData && !ceilData) {
+            // Fallback to simple fills if textures aren't ready
+            this.ctx.fillStyle = this.theme.ceilingColor || '#000';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height / 2);
+            this.ctx.fillStyle = this.theme.floorColor || '#111';
+            this.ctx.fillRect(0, this.canvas.height / 2, this.canvas.width, this.canvas.height / 2);
+            return;
+        }
+
+        const bufW = this.floorBuffer.width;
+        const bufH = this.floorBuffer.height;
+        const pixels = new Uint32Array(this.floorImageData.data.buffer);
+        
+        const focal = this.focalLength / 4; // Adjusted for buffer scale
+        const centerX = bufW / 2;
+        const centerY = bufH / 2;
+
+        for (let y = 0; y < bufH; y++) {
+            const isFloor = y >= centerY;
+            const dy = isFloor ? (y - centerY) : (centerY - y);
+            if (dy === 0) continue;
+
+            const dist = (focal * 0.5) / dy; // 0.5 = eye height
+            
+            // Step size in world space per screen pixel
+            const worldStepX = (dist / focal) * sinA;
+            const worldStepY = -(dist / focal) * cosA;
+            
+            // Starting world coordinates for the leftmost pixel of the row
+            let worldX = px + dist * cosA - (bufW / 2) * worldStepX;
+            let worldY = py + dist * sinA - (bufW / 2) * worldStepY;
+
+            const tex = isFloor ? floorData : ceilData;
+            if (!tex) {
+                // Fallback: Floor is dark grey, Ceiling is slightly lighter grey
+                const color = isFloor ? 0xFF111111 : 0xFF333333; 
+                for (let x = 0; x < bufW; x++) pixels[y * bufW + x] = color;
+                continue;
+            }
+
+
+            const tw = tex.width, th = tex.height, tp = tex.pixels;
+            
+            // Per-surface fog multipliers
+            const fogMult = isFloor ? 1.4 : 0.8; 
+            const fog = Math.max(0, 1 - ((dist * fogMult) / this.theme.fogDist));
+            const fogVal = Math.floor(255 * (1 - fog));
+
+            for (let x = 0; x < bufW; x++) {
+                const tx = ((worldX * tw) % tw + tw) % tw | 0;
+                const ty = ((worldY * th) % th + th) % th | 0;
+                
+                let c = tp[ty * tw + tx];
+                
+                if (fogVal > 0) {
+                    let r = Math.max(0, (c & 0xFF) - fogVal);
+                    let g = Math.max(0, ((c >> 8) & 0xFF) - fogVal);
+                    let b = Math.max(0, ((c >> 16) & 0xFF) - fogVal);
+                    c = (c & 0xFF000000) | r | (g << 8) | (b << 16);
+                }
+
+                pixels[y * bufW + x] = c;
+                worldX += worldStepX;
+                worldY += worldStepY;
+            }
+
+        }
+
+        this.floorCtx.putImageData(this.floorImageData, 0, 0);
+        this.ctx.drawImage(this.floorBuffer, 0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    /**
+     * Extracts and caches pixel data from an image for fast software rendering.
+     */
+    getTextureData(img) {
+        if (!img || !img.complete || img.naturalWidth === 0) return null;
+        if (img._cachedData) return img._cachedData;
+
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = img.width;
+        tempCanvas.height = img.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(img, 0, 0);
+        const data = tempCtx.getImageData(0, 0, img.width, img.height).data;
+        
+        img._cachedData = {
+            pixels: new Uint32Array(data.buffer),
+            width: img.width,
+            height: img.height
+        };
+        return img._cachedData;
+    }
+
 }

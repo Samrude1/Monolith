@@ -9,10 +9,10 @@ export const MonsterDefs = {
         description: 'A shambling pile of bones, animated by dark magic.',
         hp: 30, maxHp: 30, atk: 8, def: 2, spd: 0.5,
         cooldown: 5000,
-        spriteFile: './images/skeleton.png',
+        spriteFile: 'assets/textures/entities/skeleton.jpg',
         file: './data/monsters/Skeleton.txt',
         sprite: null, vector: [],
-        scale: 1.2, onFloor: true
+        scale: 1.0, onFloor: true, yOffset: 0.1
     },
     'spider': {
         id: 'spider',
@@ -21,9 +21,9 @@ export const MonsterDefs = {
         description: 'A giant arachnid with venomous fangs.',
         hp: 15, maxHp: 15, atk: 4, def: 0, spd: 1.2,
         cooldown: 3000,
-        spriteFile: './images/spider.png',
+        spriteFile: 'assets/textures/entities/spider.png',
         file: './data/monsters/Spider.txt',
         sprite: null, vector: [],
-        scale: 0.8, onFloor: true
+        scale: 0.8, onFloor: true, yOffset: 0.1
     }
 };

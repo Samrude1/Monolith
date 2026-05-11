@@ -3,6 +3,8 @@ import { LevelManager } from './systems/level.js';
 import { EntityDefs } from './data/entities/registry.js';
 import { loadMonsterFromFile } from './systems/monsterLoader.js';
 import { sounds } from './systems/sound.js';
+import { StorySystem } from './systems/story.js';
+
 
 const canvas = document.getElementById('gameCanvas');
 const ui = {
@@ -13,6 +15,8 @@ const ui = {
 
 const engine = new GameEngine(canvas, ui);
 const levelManager = new LevelManager(engine);
+const storySystem = new StorySystem(engine);
+
 
 function addLog(msg) {
     const div = document.createElement('div');
@@ -31,17 +35,36 @@ function startSounds() {
 }
 
 window.addEventListener('keydown', (e) => {
-    switch(e.key) {
-        case 'ArrowUp':
+    // If story is open, only allow ENTER to close it
+    if (storySystem.isOpen) {
+        if (e.key === 'Enter') {
+            storySystem.close();
+        }
+        return;
+    }
+
+    const key = e.key.toLowerCase();
+    switch(key) {
+        case 'arrowup':
         case 'w':
             handleMove();
             break;
-        case 'ArrowLeft':
+        case 'arrowdown':
+        case 's':
+            handleBackward();
+            break;
         case 'a':
+            handleStrafe(-1);
+            break;
+        case 'd':
+            handleStrafe(1);
+            break;
+        case 'arrowleft':
+        case 'q':
             handleRotate(-1);
             break;
-        case 'ArrowRight':
-        case 'd':
+        case 'arrowright':
+        case 'e':
             handleRotate(1);
             break;
         case ' ':
@@ -191,33 +214,76 @@ function updateStatsUI() {
     document.getElementById('val-dmg').innerText = weaponDmg;
     document.getElementById('val-def').innerText = armorDef;
     document.getElementById('val-gold').innerText = playerState.gold;
-    document.getElementById('val-xp').innerText = `${playerState.xp} (LVL ${playerState.charLevel})`;
+    document.getElementById('val-xp').innerText = playerState.xp;
+    document.getElementById('val-level').innerText = playerState.charLevel;
 }
 
 // --- UI Button Handlers ---
 
 function handleMove() {
+    if (storySystem.isOpen) return;
     startSounds();
     const moveRes = engine.moveForward();
-    if (moveRes === false) {
+    if (moveRes === 'MONSTER') {
+        addLog("A monster blocks your path!");
+    } else if (moveRes === false) {
         addLog("You bump into a wall.");
     } else if (moveRes !== null) {
         sounds.playStep();
         updateStatsUI();
-        if (moveRes === '<') addLog("You are standing on stairs leading UP. (Press OPEN)");
-        if (moveRes === '>') addLog("You are standing on stairs leading DOWN. (Press OPEN)");
+        
+        // Trigger Story!
+        storySystem.checkTrigger(playerState.currentFloor, engine.player.targetX, engine.player.targetY);
+
+        if (moveRes === '<') addLog("You are standing on stairs leading UP. (Press USE)");
+        if (moveRes === '>') addLog("You are standing on stairs leading DOWN. (Press USE)");
     }
 }
 
-function handleRotate(dir) {
+function handleBackward() {
+    if (storySystem.isOpen) return;
     startSounds();
+    const moveRes = engine.moveBackward();
+    if (moveRes === 'MONSTER') {
+        addLog("A monster blocks your path!");
+    } else if (moveRes === false) {
+        addLog("You bump into a wall.");
+    } else if (moveRes !== null) {
+        sounds.playStep();
+        updateStatsUI();
+        storySystem.checkTrigger(playerState.currentFloor, engine.player.targetX, engine.player.targetY);
+    }
+}
+
+function handleStrafe(side) {
+    if (storySystem.isOpen) return;
+    startSounds();
+    const moveRes = engine.strafe(side);
+    if (moveRes === 'MONSTER') {
+        addLog("A monster blocks your path!");
+    } else if (moveRes === false) {
+        addLog("You bump into a wall.");
+    } else if (moveRes !== null) {
+        sounds.playStep();
+        updateStatsUI();
+        storySystem.checkTrigger(playerState.currentFloor, engine.player.targetX, engine.player.targetY);
+    }
+}
+
+
+function handleRotate(dir) {
+    if (storySystem.isOpen) return;
+    startSounds();
+
     engine.rotate(dir);
     sounds.playStep();
     updateStatsUI();
 }
 
 async function handleInteract() {
+    if (storySystem.isOpen) return;
     startSounds();
+
     const msg = engine.interact();
     if (msg === "STAIRS_UP") {
         if (playerState.currentFloor > 1) {
@@ -252,7 +318,9 @@ async function handleInteract() {
 }
 
 function handleDefend() {
+    if (storySystem.isOpen) return;
     if (playerState.defendCooldown > 0) return;
+
 
     addLog("You raise your guard!");
     playerState.isDefending = true;
@@ -270,7 +338,9 @@ function handleDefend() {
 }
 
 function handleAttack() {
+    if (storySystem.isOpen) return;
     startSounds();
+
     if (playerState.attackCooldown > 0) return;
     playerState.isDefending = false; 
 
@@ -338,7 +408,9 @@ function handleAttack() {
 }
 
 function handleTake() {
+    if (storySystem.isOpen) return;
     startSounds();
+
     const px = Math.floor(engine.player.targetX);
     const py = Math.floor(engine.player.targetY);
     
@@ -383,7 +455,9 @@ function handleTake() {
 }
 
 function toggleInventory(show) {
+    if (show && storySystem.isOpen) return;
     const overlay = document.getElementById('inventory-overlay');
+
     if (show) {
         overlay.classList.remove('hidden');
         updateInventoryUI();
@@ -510,7 +584,11 @@ document.getElementById('btn-start').onclick = () => {
     document.getElementById('info-bar').classList.remove('hidden');
     startSounds();
     applyScale();
+
+    // Check for story at spawn
+    storySystem.checkTrigger(playerState.currentFloor, engine.player.targetX, engine.player.targetY);
 };
+
 
 document.getElementById('btn-settings').onclick = () => {
     document.getElementById('main-menu').classList.add('hidden');
@@ -529,8 +607,11 @@ document.getElementById('btn-to-menu').onclick = () => {
 // --- Listeners ---
 
 document.getElementById('btn-up').onclick = handleMove;
-document.getElementById('btn-left').onclick = () => handleRotate(-1);
-document.getElementById('btn-right').onclick = () => handleRotate(1);
+document.getElementById('btn-down').onclick = handleBackward;
+document.getElementById('btn-strafe-left').onclick = () => handleStrafe(-1);
+document.getElementById('btn-strafe-right').onclick = () => handleStrafe(1);
+document.getElementById('btn-turn-left').onclick = () => handleRotate(-1);
+document.getElementById('btn-turn-right').onclick = () => handleRotate(1);
 document.getElementById('btn-attack').onclick = handleAttack;
 document.getElementById('btn-defend').onclick = handleDefend;
 document.getElementById('btn-take').onclick = handleTake;
@@ -558,7 +639,8 @@ async function start() {
             def.vector = await loadMonsterFromFile(def.file);
         } catch (e) {}
         if (def.spriteFile) {
-            def.sprite = await loadImage(def.spriteFile);
+            const rawImg = await loadImage(def.spriteFile);
+            def.sprite = engine.removeBlackBackground(rawImg);
         }
     }
 

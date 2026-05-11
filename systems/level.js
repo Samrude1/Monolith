@@ -7,7 +7,7 @@ import { LevelThemes } from '../data/themes.js';
 export class LevelManager {
     constructor(engine) {
         this.engine = engine;
-        this.currentFloor = 1; // Rename to match dungeon floor
+        this.currentFloor = 1; 
         this.map = [];
         this.levelCache = {}; // Stores map and entities for visited levels
         this.isLoading = false;
@@ -26,7 +26,7 @@ export class LevelManager {
     }
 
     /**
-     * Loads a dungeon floor, either from cache or from a file.
+     * Loads a dungeon floor from a file.
      * @param {number} floorNum - The floor number to load.
      * @param {string} entryChar - The character identifying the entry point ('S', '<', or '>').
      */
@@ -53,14 +53,13 @@ export class LevelManager {
                 this.engine.entities = cached.entities;
                 this.setPlayerPosition(entryChar);
                 
-                // Apply theme
                 const theme = LevelThemes[this.currentFloor] || LevelThemes.default;
-                this.engine.setTheme(theme);
+                this.engine.setTheme(theme.atmosphere || theme);
 
                 return true;
             }
 
-            // Load new level data
+            // Load level data from file
             const url = `./data/levels/Level${floorNum}.txt`;
             const resp = await fetch(url);
             if (!resp.ok) throw new Error(`Floor ${floorNum} not found`);
@@ -83,15 +82,18 @@ export class LevelManager {
                         floorEntities.push({ type: 'object', monsterType: 'stairs_up', x: x + 0.5, y: y + 0.5 });
                     } else if (char === '>') {
                         floorEntities.push({ type: 'object', monsterType: 'stairs_down', x: x + 0.5, y: y + 0.5 });
+                    } else if (char === 'D') {
+                        // Door entities are now handled by the engine's wall rendering system
                     }
                 }
             }
             
             this.setPlayerPosition(entryChar); 
 
-            // Apply theme
+            // Apply atmosphere settings
             const theme = LevelThemes[this.currentFloor] || LevelThemes.default;
-            this.engine.setTheme(theme);
+            this.engine.setTheme(theme.atmosphere || theme);
+            const spawnConfig = theme.spawn || LevelThemes.default.spawn;
 
             // Randomize spawn locations
             for (let i = emptyTiles.length - 1; i > 0; i--) {
@@ -99,18 +101,23 @@ export class LevelManager {
                 [emptyTiles[i], emptyTiles[j]] = [emptyTiles[j], emptyTiles[i]];
             }
 
-            // Spawn Monsters
-            const monsterCount = floorNum === 1 ? 10 : 18; 
-            const monsterPool = floorNum === 1 ? ['spider', 'spider', 'skeleton'] : ['skeleton', 'skeleton', 'spider'];
-            
-            for (let i = 0; i < monsterCount && emptyTiles.length > 0; i++) {
-                const tile = emptyTiles.pop();
+            // Spawn Monsters based on theme pool (with safety zone)
+            const monsterCount = spawnConfig.monsterCount;
+            const monsterPool = spawnConfig.monsterPool;
+            const px = this.engine.player.startX;
+            const py = this.engine.player.startY;
+
+            const safeTiles = emptyTiles.filter(tile => {
+                const dist = Math.sqrt(Math.pow(tile.x + 0.5 - px, 2) + Math.pow(tile.y + 0.5 - py, 2));
+                return dist > 6;
+            });
+
+            for (let i = 0; i < monsterCount && safeTiles.length > 0; i++) {
+                const tileIndex = Math.floor(Math.random() * safeTiles.length);
+                const tile = safeTiles.splice(tileIndex, 1)[0];
                 const type = monsterPool[Math.floor(Math.random() * monsterPool.length)];
                 const def = EntityDefs[type];
-                if (!def) {
-                    console.warn(`Skipping spawn. Missing entity def: ${type}`);
-                    continue;
-                }
+                if (!def) continue;
 
                 floorEntities.push({
                     type: 'monster',
@@ -122,15 +129,13 @@ export class LevelManager {
                 });
             }
 
-            // Spawn Loot
-            const lootCount = 12;
-            const lootOptions = floorNum === 1 
-                ? ['food', 'food', 'gold_pile', 'health_potion', 'sword', 'dagger', 'leather_armor']
-                : ['food', 'gold_pile', 'health_potion', 'health_potion', 'sword', 'mace', 'leather_armor'];
+            // Spawn Loot based on theme pool
+            const lootCount = spawnConfig.lootCount;
+            const lootPool = spawnConfig.lootPool;
 
             for (let i = 0; i < lootCount && emptyTiles.length > 0; i++) {
                 const tile = emptyTiles.pop();
-                const type = lootOptions[Math.floor(Math.random() * lootOptions.length)];
+                const type = lootPool[Math.floor(Math.random() * lootPool.length)];
                 
                 floorEntities.push({
                     type: 'object',
@@ -141,19 +146,19 @@ export class LevelManager {
             }
             
             this.engine.entities = floorEntities;
-            
-            // Add test wall decal on floor 1
+
+            // Add test wall decal on floor 1 (The Lever placeholder)
             if (floorNum === 1) {
                 this.engine.entities.push({
                     type: 'decal',
                     monsterType: 'potion_decal',
-                    x: 3, 
-                    y: 2, 
+                    x: 3,
+                    y: 2,
                     facing: 'N'
                 });
             }
 
-            this.saveCurrentState(); // Initial cache
+            this.saveCurrentState(); 
             return true;
 
         } catch (e) {
@@ -174,7 +179,7 @@ export class LevelManager {
                 if (this.map[y][x] === entryChar) {
                     this.engine.player.startX = this.engine.player.targetX = x + 0.5;
                     this.engine.player.startY = this.engine.player.targetY = y + 0.5;
-                    this.engine.player.startDir = this.engine.player.targetDir = 1; // Face East
+                    this.engine.player.startDir = this.engine.player.targetDir = 1; 
                     
                     if (entryChar === 'S') this.map[y][x] = '.';
                     return;
@@ -190,5 +195,3 @@ export class LevelManager {
         return this.engine.entities.filter(e => Math.floor(e.x) === x && Math.floor(e.y) === y);
     }
 }
-
-
