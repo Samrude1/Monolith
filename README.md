@@ -3,7 +3,7 @@
 A professional, high-performance pseudo-3D dungeon crawler engine built with Vanilla JavaScript and HTML5 Canvas.
 
 <p align="center">
-  <img src="./images/screenshot.png" alt="Monolith Gameplay" width="800">
+  <img src="./images/screenshot1.png" alt="Monolith Gameplay" width="800">
 </p>
 
 ## 🎮 Overview
