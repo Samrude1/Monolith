@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retro Vector Adventure</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_crt.css">
 </head>
 <body>
     <div id="game-wrapper">
@@ -62,7 +63,10 @@
             <div id="stats-panel" class="ui-panel">
                 <div class="panel-header">CHARACTER</div>
                 <div class="stat-group">
-                    <div class="stat-row">HP: <span id="hp-value">100</span></div>
+                    <div class="stat-row">HP: <span id="hp-value">100/100</span></div>
+                    <div id="hp-bar-container">
+                        <div id="hp-bar-fill"></div>
+                    </div>
                     <div class="stat-row">DIR: <span id="dir-value">N</span></div>
                 </div>
                 

@@ -6,10 +6,8 @@
 const THEMES = {
     CLASSIC: {
         atmosphere: {
-            dustSize: 3,
+            dustSize: 0,
             fogDist: 12,
-
-
             waistLine: 0.7,
             showWaistLine: true,
             wallTexture: 'assets/textures/themes/classic/wall.png',

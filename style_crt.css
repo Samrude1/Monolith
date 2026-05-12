@@ -1,0 +1,71 @@
+
+/* CRT Effect Styles */
+.crt-container {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Scanlines overlay */
+.crt-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.15) 50%
+    ), 
+    linear-gradient(
+        90deg, 
+        rgba(255, 0, 0, 0.04), 
+        rgba(0, 255, 0, 0.01), 
+        rgba(0, 0, 255, 0.04)
+    );
+    background-size: 100% 3px, 3px 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Vignette and flicker */
+.crt-vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        circle, 
+        rgba(0, 0, 0, 0) 60%, 
+        rgba(0, 0, 0, 0.4) 100%
+    );
+    pointer-events: none;
+    z-index: 11;
+}
+
+/* Subtle flicker animation */
+@keyframes crt-flicker {
+    0% { opacity: 0.98; }
+    5% { opacity: 0.95; }
+    10% { opacity: 0.99; }
+    15% { opacity: 0.96; }
+    20% { opacity: 0.98; }
+    100% { opacity: 1; }
+}
+
+.crt-flicker-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(18, 16, 16, 0.01);
+    pointer-events: none;
+    z-index: 12;
+    animation: crt-flicker 0.1s infinite;
+}
+
+/* Applying the blur/bloom to the canvas itself */
+#gameCanvas.crt-active {
+    filter: brightness(1.1) contrast(1.1) blur(0.4px);
+}

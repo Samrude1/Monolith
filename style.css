@@ -40,7 +40,7 @@ body {
     background: var(--bg-color);
     transform-origin: center center;
     transition: transform 0.3s ease-out;
-    filter: grayscale(100%) contrast(1.2); /* Pure B&W feel */
+    filter: none; /* Let the colors shine! */
 }
 
 /* Overlays */
@@ -113,30 +113,33 @@ body {
 
 /* Side Panels */
 .ui-panel {
-    width: 200px;
+    width: 210px;
     display: flex;
     flex-direction: column;
     padding: 15px;
-    background: var(--panel-bg);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
 }
 
 #stats-panel {
-    border-right: 2px solid var(--line-color);
+    border-right: 3px double var(--line-color);
 }
 
 #action-panel {
-    border-left: 2px solid var(--line-color);
+    border-left: 3px double var(--line-color);
 }
 
 .panel-header {
-    font-size: 16px;
+    font-size: 14px;
     text-align: center;
     border-bottom: 2px solid var(--line-color);
-    margin: 20px 0 10px 0;
+    margin: 20px 0 15px 0;
     padding-bottom: 8px;
-    color: var(--line-color);
+    color: #fff;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .panel-header:first-child {
@@ -147,19 +150,39 @@ body {
     margin-bottom: 25px;
 }
 
+#hp-bar-container {
+    width: 100%;
+    height: 12px;
+    border: 1px solid #fff;
+    margin: 5px 0 15px 0;
+    background: #200;
+    position: relative;
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.2);
+}
+
+#hp-bar-fill {
+    width: 100%;
+    height: 100%;
+    background: #c00;
+    transition: width 0.3s ease-out;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
 .stat-row {
-    font-size: 14px;
-    margin-bottom: 12px;
+    font-size: 13px;
+    margin-bottom: 8px;
     color: #fff;
 }
 
 .stat-row.small {
-    font-size: 12px;
-    margin-bottom: 8px;
+    font-size: 11px;
+    margin-bottom: 6px;
+    color: #bbb;
 }
 
 .stat-row span {
     color: #fff;
+    font-weight: bold;
 }
 /* Specialized Progress Box */
 .xp-box {
@@ -388,9 +411,59 @@ body {
     animation: flashEffect 0.15s ease-out;
 }
 
+#view-container::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.hit-flash::after {
+    animation: flashEffect 0.15s ease-out;
+}
+
 @keyframes flashEffect {
-    0% { background: rgba(255, 255, 255, 0.5); }
+    0% { background: rgba(255, 255, 255, 0.8); }
     100% { background: transparent; }
+}
+
+.hit-flash-player::after {
+    animation: playerFlashEffect 0.15s ease-out;
+}
+
+@keyframes playerFlashEffect {
+    0% { background: rgba(255, 0, 0, 0.5); }
+    100% { background: transparent; }
+}
+
+.critical-hit::after {
+    animation: critFlashEffect 0.2s ease-out;
+}
+
+@keyframes critFlashEffect {
+    0% { background: rgba(255, 215, 0, 0.7); }
+    100% { background: transparent; }
+}
+
+.perfect-parry::after {
+    animation: parryFlashEffect 0.3s ease-out;
+}
+
+@keyframes parryFlashEffect {
+    0% { background: rgba(0, 255, 255, 0.6); }
+    100% { background: transparent; }
+}
+
+.screen-shake {
+    animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
 }
 
 @keyframes fadeIn {

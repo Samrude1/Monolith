@@ -40,38 +40,30 @@ export class GameEngine {
         this.theme = {
             wallColor: [255, 255, 255],
             dustColor: [100, 100, 100],
-            dustSize: 4,
-            fogDist: 8,
+            dustSize: 0,
+            fogDist: 12,
             waistLine: 0.7,
             showWaistLine: true
         };
     }
 
-    setTheme(config) {
+    async setTheme(config) {
         this.theme = { ...this.theme, ...config };
         
-        // Auto-load textures if defined as strings
-        if (config.wallTexture && typeof config.wallTexture === 'string') {
+        const loadImg = (url) => new Promise(resolve => {
             const img = new Image();
-            img.src = config.wallTexture;
-            this.theme.wallTextureImg = img;
-        }
-        if (config.floorTexture && typeof config.floorTexture === 'string') {
-            const img = new Image();
-            img.src = config.floorTexture;
-            this.theme.floorTextureImg = img;
-        }
-        if (config.ceilingTexture && typeof config.ceilingTexture === 'string') {
-            const img = new Image();
-            img.src = config.ceilingTexture;
-            this.theme.ceilingTextureImg = img;
-        }
-        if (config.doorTexture && typeof config.doorTexture === 'string') {
-            const img = new Image();
-            img.src = config.doorTexture;
-            this.theme.doorTextureImg = img;
-        }
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = url;
+        });
 
+        const promises = [];
+        if (config.wallTexture) promises.push(loadImg(config.wallTexture).then(img => this.theme.wallTextureImg = img));
+        if (config.floorTexture) promises.push(loadImg(config.floorTexture).then(img => this.theme.floorTextureImg = img));
+        if (config.ceilingTexture) promises.push(loadImg(config.ceilingTexture).then(img => this.theme.ceilingTextureImg = img));
+        if (config.doorTexture) promises.push(loadImg(config.doorTexture).then(img => this.theme.doorTextureImg = img));
+
+        await Promise.all(promises);
     }
 
     /**
@@ -250,6 +242,7 @@ export class GameEngine {
         const py = this.player.targetY;
 
         for (const ent of this.entities) {
+            if (ent.hitTimer > 0) ent.hitTimer -= dt;
             if (ent.type !== 'monster') continue;
 
             // Initialize instance properties if missing
@@ -584,7 +577,8 @@ export class GameEngine {
                     type: 'sprite',
                     sprite: def.sprite,
                     sx, sy, size,
-                    dist: rz - (lunge * 0.01)
+                    dist: rz - (lunge * 0.01),
+                    hitTimer: ent.hitTimer || 0
                 });
             } else {
                 // Billboard Vector Box Fallback
@@ -615,7 +609,7 @@ export class GameEngine {
                 const img = f.sprite;
                 
                 // Canvas elements don't have .complete, so we check if it's either a complete Image with dimensions or a Canvas
-                const isReady = img && ((img.complete && img.naturalWidth > 0) || img instanceof HTMLCanvasElement);
+                const isReady = img && ((img instanceof HTMLCanvasElement) || (img.complete && img.naturalWidth > 0));
                 if (!isReady) {
                     ctx.restore();
                     continue;
@@ -627,14 +621,22 @@ export class GameEngine {
                 const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
                 ctx.globalAlpha = fog;
                 
+                // FLASH EFFECT (White hit flash)
+                if (f.hitTimer > 0) {
+                    ctx.filter = 'brightness(10)'; // Turn sprite white
+                } else {
+                    ctx.filter = 'none';
+                }
+
                 // Draw image
                 ctx.drawImage(img, f.sx - w / 2, f.sy - h / 2, w, h);
-                
+                ctx.filter = 'none'; // Reset for next objects
+
                 ctx.restore();
             } else if (f.type === 'wall-decal') {
                 const screenWidth = f.x2 - f.x1;
                 const img = f.sprite;
-                const isReady = img && ((img.complete && img.naturalWidth > 0) || img instanceof HTMLCanvasElement);
+                const isReady = img && ((img instanceof HTMLCanvasElement) || (img.complete && img.naturalWidth > 0));
                 if (!isReady || screenWidth <= 0.5) continue;
                 
                 
@@ -714,7 +716,8 @@ export class GameEngine {
                 
                 const activeTex = isDoor ? (this.theme.doorTextureImg || this.theme.wallTextureImg) : (isWall ? this.theme.wallTextureImg : null);
                 
-                if (activeTex?.complete && activeTex.naturalWidth > 0) {
+                const isReady = activeTex && ((activeTex instanceof HTMLCanvasElement) || (activeTex.complete && activeTex.naturalWidth > 0));
+                if (isReady) {
                     ctx.beginPath(); 
                     const img = activeTex;
                     
@@ -752,6 +755,10 @@ export class GameEngine {
                                 clampedSx, 0, 1, img.height,
                                 xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1
                             );
+                            
+                            // SUBTLE TINT FOR WALLS
+                            ctx.fillStyle = 'rgba(0, 50, 150, 0.05)';
+                            ctx.fillRect(xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1);
                         }
 
                         // If using wall texture as a fallback for a door, darken it
@@ -979,6 +986,17 @@ export class GameEngine {
                     c = (c & 0xFF000000) | r | (g << 8) | (b << 16);
                 }
 
+                // SUBTLE ATMOSPHERIC TINTING (Restored to light levels)
+                if (isFloor) {
+                    let r = Math.min(255, (c & 0xFF) + 6);
+                    let g = Math.min(255, ((c >> 8) & 0xFF) + 3);
+                    c = (c & 0xFFFF0000) | r | (g << 8);
+                } else {
+                    let r = Math.min(255, (c & 0xFF) + 3);
+                    let b = Math.min(255, ((c >> 16) & 0xFF) + 6);
+                    c = (c & 0xFF00FF00) | r | (b << 16);
+                }
+
                 pixels[y * bufW + x] = c;
                 worldX += worldStepX;
                 worldY += worldStepY;
@@ -994,7 +1012,11 @@ export class GameEngine {
      * Extracts and caches pixel data from an image for fast software rendering.
      */
     getTextureData(img) {
-        if (!img || !img.complete || img.naturalWidth === 0) return null;
+        if (!img) return null;
+        // Check if it's a Canvas or a loaded Image
+        const isReady = (img instanceof HTMLCanvasElement) || (img.complete && img.naturalWidth > 0);
+        if (!isReady) return null;
+        
         if (img._cachedData) return img._cachedData;
 
         const tempCanvas = document.createElement('canvas');

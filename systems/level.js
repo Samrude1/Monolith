@@ -54,7 +54,7 @@ export class LevelManager {
                 this.setPlayerPosition(entryChar);
                 
                 const theme = LevelThemes[this.currentFloor] || LevelThemes.default;
-                this.engine.setTheme(theme.atmosphere || theme);
+                await this.engine.setTheme(theme.atmosphere || theme);
 
                 return true;
             }
@@ -92,7 +92,7 @@ export class LevelManager {
 
             // Apply atmosphere settings
             const theme = LevelThemes[this.currentFloor] || LevelThemes.default;
-            this.engine.setTheme(theme.atmosphere || theme);
+            await this.engine.setTheme(theme.atmosphere || theme);
             const spawnConfig = theme.spawn || LevelThemes.default.spawn;
 
             // Randomize spawn locations

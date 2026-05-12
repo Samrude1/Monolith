@@ -140,6 +140,10 @@ engine.onEntityAttack = (monster, dmg) => {
             monster.hp -= reflectDmg;
             addLog(`You deflect the blow and strike back for ${reflectDmg} DMG!`);
             finalDmg = 0;
+
+            const view = document.getElementById('view-container');
+            view.classList.add('perfect-parry');
+            setTimeout(() => view.classList.remove('perfect-parry'), 300);
         } else if (blockRoll >= 10) {
             // SUCCESSFUL BLOCK
             const blockAmount = rollDice(6) + weaponDef + armorDef;
@@ -169,6 +173,15 @@ engine.onEntityAttack = (monster, dmg) => {
 
     playerState.hp -= finalDmg;
     updateStatsUI();
+    
+    // Damage flash for player
+    const view = document.getElementById('view-container');
+    view.classList.add('hit-flash-player');
+    view.classList.add('screen-shake');
+    setTimeout(() => {
+        view.classList.remove('hit-flash-player');
+        view.classList.remove('screen-shake');
+    }, 150);
     
     if (playerState.hp <= 0) {
         handleGameOver();
@@ -201,6 +214,10 @@ function updateStatsUI() {
     if (!document.getElementById('hp-value')) return;
 
     document.getElementById('hp-value').innerText = `${playerState.hp}/${playerState.maxHp}`;
+    
+    // Update HP Bar
+    const hpPercent = Math.max(0, (playerState.hp / playerState.maxHp) * 100);
+    document.getElementById('hp-bar-fill').style.width = `${hpPercent}%`;
     
     const dirs = ['N', 'E', 'S', 'W'];
     document.getElementById('dir-value').innerText = dirs[engine.player.targetDir];
@@ -376,11 +393,19 @@ function handleAttack() {
         }
         
         monster.hp -= totalDmg;
+        monster.hitTimer = 0.15; // Trigger the "pro" enemy flash
         playerState.attackCooldown = weapon ? (weapon.cooldown || 4000) : 2500; 
         
         const view = document.getElementById('view-container');
-        view.classList.add('hit-flash');
-        setTimeout(() => view.classList.remove('hit-flash'), 150);
+        if (hitRoll === 20) {
+            view.classList.add('critical-hit');
+            view.classList.add('screen-shake');
+        }
+        
+        setTimeout(() => {
+            view.classList.remove('critical-hit');
+            view.classList.remove('screen-shake');
+        }, 200);
 
         if (monster.hp <= 0) {
             handleMonsterDeath(monster, 20);
@@ -622,6 +647,10 @@ document.getElementById('btn-restart').onclick = () => location.reload();
 
 /**
  * Main game initialization and loop.
+ */
+/**
+ * Generates a high-quality pro-level retro stone wall texture.
+ * Features noise, cracks, and beveled edges for depth.
  */
 async function start() {
     const loadImage = (url) => new Promise(resolve => {

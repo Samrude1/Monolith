@@ -22,7 +22,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/apple.png',
         file: './data/objects/Food.txt',
         sprite: null, vector: [],
-        scale: 0.4, onFloor: true, yOffset: 0.2
+        scale: 0.35, onFloor: true, yOffset: 0.25
     },
     'sword': {
         id: 'sword',
