@@ -14,7 +14,6 @@ export const STORY_DATA = {
 
             title: "THE DARK DESCENT",
             text: "The heavy iron portcullis slams shut behind you with a final, echoing thud. The air here is thick with the scent of damp stone and ancient rot. You are now a prisoner of the Vector Dungeon, and your only way out is through the darkness.",
-            img: "assets/illustrations/dungeon_gate.png",
             once: true
         },
         {

@@ -53,7 +53,10 @@ export class GameEngine {
         const loadImg = (url) => new Promise(resolve => {
             const img = new Image();
             img.onload = () => resolve(img);
-            img.onerror = () => resolve(null);
+            img.onerror = () => {
+                console.warn(`Theme image failed to load: ${url}`);
+                resolve(null);
+            };
             img.src = url;
         });
 
@@ -103,6 +106,7 @@ export class GameEngine {
         const text = (await resp.text()).replace(/\r/g, '');
         this.map = text.trim().split('\n').map(line => line.split(''));
 
+        let foundSpawn = false;
         for (let y = 0; y < this.map.length; y++) {
             for (let x = 0; x < this.map[y].length; x++) {
                 if (this.map[y][x] === 'S') {
@@ -110,13 +114,17 @@ export class GameEngine {
                     this.player.startY = this.player.targetY = y + 0.5;
                     this.player.startDir = this.player.targetDir = 0; // face North
                     this.map[y][x] = '.';
+                    foundSpawn = true;
                 }
             }
         }
+        if (!foundSpawn) {
+            console.warn(`Map has no spawn marker "S": ${url} — player stays at default (0.5, 0.5).`);
+        }
     }
 
-    // Returns true=moved, false=wall, null=busy
-    // General movement helper
+    // Returns cell char on success ('.', 'd', '<', '>'), false=blocked wall, null=busy anim,
+    // 'MONSTER'=monster blocking tile.
     tryMove(dx, dy) {
         if (this.player.animProgress < 1.0) return null;
 
@@ -569,7 +577,7 @@ export class GameEngine {
                     // Formula to touch floor: horizon + (0.5*f) - (size/2)
                     sy += f * (0.5 - scale / 2 + yOffset);
                 } else {
-                    sy += (def.anchorY || 0 + yOffset) * f;
+                    sy += ((def.anchorY ?? 0) + yOffset) * f;
                 }
                 const size = f * scale;
                 
@@ -686,16 +694,18 @@ export class GameEngine {
                 ctx.font = 'bold 16px monospace';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(f.name.toUpperCase(), f.sx, f.sy);
+                ctx.fillText(String(f.name ?? '').toUpperCase(), f.sx, f.sy);
             } else if (f.type === 'dot') {
-                // Draw floor dust
+                // Draw floor dust with perspective scaling
                 const fog = Math.max(0, 1 - (f.dist / this.theme.fogDist));
                 if (fog > 0) {
-                    const gray = Math.floor(150 * fog);
+                    const gray = Math.floor(180 * fog);
                     ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
-                    // Scale size with distance (fog is 1 at near, 0 at far)
-                    const s = Math.max(1, Math.floor(this.theme.dustSize * fog));
-                    ctx.fillRect(f.sx, f.sy, s, s);
+                    ctx.globalAlpha = fog * 0.8; // Fade out far dust
+                    // Perspective scaling: size decreases faster with distance
+                    const s = Math.max(1, Math.floor(this.theme.dustSize * (fog * fog)));
+                    ctx.fillRect(f.sx - s/2, f.sy - s/2, s, s);
+                    ctx.globalAlpha = 1.0;
                 }
             } else {
                 ctx.beginPath();
@@ -792,18 +802,25 @@ export class GameEngine {
                         ctx.lineTo(xR_int + 2, yBR); ctx.lineTo(xL_int, yBL);
                         ctx.fill();
                     }
-                } else if (!f.isDoor) {
-                    // Fallback to wireframe if no texture and NOT a door
+                } else {
+                    // Fallback to wireframe if no texture (Walls and Doors both get this now)
                     const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
                     const gray = Math.floor(255 * fog);
                     ctx.strokeStyle = `rgb(${gray},${gray},${gray})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(f.x1, f.yT1);
+                    ctx.lineTo(f.x2, f.yT2);
+                    ctx.lineTo(f.x2, f.yB2);
+                    ctx.lineTo(f.x1, f.yB1);
+                    ctx.closePath();
                     ctx.stroke();
 
-                    // Perspective Waist-line
-                    if (this.theme.showWaistLine) {
+                    // Perspective Waist-line (Skip for doors)
+                    if (this.theme.showWaistLine && !isDoor) {
                         const h = this.theme.waistLine;
                         const wy1 = f.yT1 + (f.yB1 - f.yT1) * h;
-                        const wy2 = f.yT2 + (f.yB2 - f.yB1) * h;
+                        const wy2 = f.yT2 + (f.yB2 - f.yT2) * h;
                         ctx.beginPath();
                         ctx.moveTo(f.x1, wy1);
                         ctx.lineTo(f.x2, wy2);
@@ -827,28 +844,41 @@ export class GameEngine {
                     const dyBL = lerpYB(marginW);
                     const dyBR = lerpYB(1 - marginW);
 
-                    // 1. Draw Door Background (Grey hole)
+                    // 1. Draw Door Outline
                     const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
-                    const doorGray = Math.floor(40 * fog); // Dark grey, fogged
-                    ctx.fillStyle = `rgb(${doorGray},${doorGray},${doorGray})`;
-                    ctx.beginPath();
-                    ctx.moveTo(dxL, dyBL);
-                    ctx.lineTo(dxL, dyTL);
-                    ctx.lineTo(dxR, dyTR);
-                    ctx.lineTo(dxR, dyBR);
-                    ctx.fill();
-
-                    // 2. Draw Door Frame
-                    const frameGray = Math.floor(120 * fog); 
-                    ctx.strokeStyle = `rgb(${frameGray},${frameGray},${frameGray})`;
+                    const gray = Math.floor(255 * fog);
+                    ctx.strokeStyle = `rgb(${gray},${gray},${gray})`;
                     ctx.lineWidth = 2;
-                    ctx.lineJoin = 'round';
                     ctx.beginPath();
                     ctx.moveTo(dxL, dyBL);
                     ctx.lineTo(dxL, dyTL);
                     ctx.lineTo(dxR, dyTR);
                     ctx.lineTo(dxR, dyBR);
+                    ctx.closePath();
                     ctx.stroke();
+
+                    // 2. Draw Vector Details (Planks & X-brace)
+                    // Vertical planks
+                    for (let t = 0.25; t < 1.0; t += 0.25) {
+                        const px = lerpX(marginW + (1 - 2 * marginW) * t);
+                        const pyT = lerpYT(marginW + (1 - 2 * marginW) * t) + (lerpYB(marginW + (1 - 2 * marginW) * t) - lerpYT(marginW + (1 - 2 * marginW) * t)) * marginTop;
+                        const pyB = lerpYB(marginW + (1 - 2 * marginW) * t);
+                        ctx.beginPath();
+                        ctx.moveTo(px, pyT);
+                        ctx.lineTo(px, pyB);
+                        ctx.stroke();
+                    }
+
+                    // Classic X-Brace
+                    ctx.beginPath();
+                    ctx.moveTo(dxL, dyTL); ctx.lineTo(dxR, dyBR);
+                    ctx.moveTo(dxR, dyTR); ctx.lineTo(dxL, dyBL);
+                    ctx.stroke();
+
+                    // Simple handle/keyhole
+                    const hx = lerpX(1 - marginW - 0.1);
+                    const hy = (dyTL + dyBL) / 2;
+                    ctx.strokeRect(hx - 2, hy - 4, 4, 8);
                 }
 
             }

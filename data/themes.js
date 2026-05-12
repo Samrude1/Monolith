@@ -6,14 +6,11 @@
 const THEMES = {
     CLASSIC: {
         atmosphere: {
-            dustSize: 0,
+            dustSize: 6,
             fogDist: 12,
             waistLine: 0.7,
             showWaistLine: true,
-            wallTexture: 'assets/textures/themes/classic/wall.png',
-            doorTexture: 'assets/textures/themes/classic/door.png',
-            floorTexture: 'assets/textures/themes/classic/floor.png',
-            ceilingTexture: 'assets/textures/themes/classic/ceiling.png',
+            // Textures disabled for raw retro look
 
         },
         spawn: {
