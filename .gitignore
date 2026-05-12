@@ -28,4 +28,7 @@ Thumbs.db
 
 # Project Specific Exclusions
 .gemini/
-Docs/
+scratch/
+create_*.js
+generate_classic_assets.js
+fix_apple.ps1
