@@ -1,23 +1,26 @@
 # MONOLITH 🏛️
 
-A professional, high-performance pseudo-3D dungeon crawler engine built with Vanilla JavaScript and HTML5 Canvas.
+A professional, high-performance pseudo-3D dungeon crawler engine built with Vanilla JavaScript and HTML5 Canvas. Now featuring a signature **Raw Retro Vector** aesthetic.
 
 <p align="center">
-  <img src="./images/screenshot1.png" alt="Monolith Gameplay" width="800">
+  <img src="./images/screenshot2.png" alt="Monolith Raw Retro Vector" width="800">
+  <br>
+  <em>The new high-fidelity vector/wireframe rendering pipeline.</em>
 </p>
 
 ## 🎮 Overview
 
-**Monolith** is a technical showcase of first-person dungeon crawler (DRPG) mechanics. It features a custom rendering pipeline that simulates a 3D perspective using perspective-correct transformations, billboarding, and distance-based atmospheric effects—all without external libraries like Three.js.
+**Monolith** is a technical showcase of first-person dungeon crawler (DRPG) mechanics. It features a custom rendering pipeline that simulates a 3D perspective using perspective-correct transformations, billboarding, and distance-based atmospheric effects.
+
+The project has evolved into a fully **Vector-Based** experience, replacing legacy PNG textures with dynamic geometric wireframes for a sharp, minimalist retro aesthetic.
 
 ### Key Features
-- **Custom Pseudo-3D Engine**: Fast, software-based rendering with sub-pixel precision.
-- **Automated Texture System**: Dynamic theme-based texture mapping for walls, floors, ceilings, and doors.
-- **Advanced Sprite System**: High-quality billboard rendering with automatic chromakey background removal.
+- **Raw Retro Vector Engine**: High-performance geometric rendering with sub-pixel precision.
+- **Perspective-Correct Decals**: Interactive objects (like levers) are projected directly onto wall surfaces.
+- **Dynamic Sprite Pipeline**: Monsters and items are rendered as high-fidelity wireframe billboards.
+- **Multi-Stop Atmospheric Fog**: Advanced distance-based visibility rendering.
 - **Enhanced UI Layout**: Optimized sidebar panels with dedicated XP, Level, and Gold tracking.
-- **Dynamic Theme Architecture**: Configurable visuals per floor (fog, textures, particles).
 - **Unified RPG Data Layer**: Centralized entity registry for monsters and loot.
-- **Retro Aesthetic**: Sharp pixel-art rendering with modern "wireframe-ish" details.
 
 ---
 
@@ -59,37 +62,38 @@ Explore the depths of the Monolith, defeat monsters, and find your way to the de
 | Action | Keyboard | UI Button |
 | :--- | :--- | :--- |
 | **Move Forward** | `W` / `↑` | `UP` |
-| **Turn Left** | `A` / `←` | `LEFT` |
-| **Turn Right** | `D` / `→` | `RIGHT` |
-| **Interact / Open** | `Space` | `OPEN` |
+| **Move Backward** | `S` / `↓` | `DOWN` |
+| **Strafe** | `A` / `D` | - |
+| **Turn Left/Right** | `Q` / `E` | `LEFT` / `RIGHT` |
+| **Interact / Use** | `F` / `Space` | `USE` |
 | **Attack** | - | `ATTACK` |
 | **Defend / Parry** | - | `DEFEND` |
-| **Pick Up Item** | - | `TAKE` |
 | **Inventory** | - | `INV` |
 
 ### Gameplay Mechanics
 - **Exploration**: Use the movement keys to navigate the grid-based dungeon. Look for stairs to go up (`<`) or down (`>`).
-- **Combat**: When facing a monster, use **ATTACK** to strike. Use **DEFEND** to raise your guard—timing it right can result in a **Perfect Parry**, dealing massive counter-damage!
-- **Inventory**: Pick up items (gold, weapons, food) using **TAKE**. Open your **INV** to equip gear or consume items to restore health.
+- **Combat**: When facing a monster, use **ATTACK** to strike. Use **DEFEND** to raise your guard—timing it right can result in a **Perfect Parry**!
+- **Levers & Objects**: Use **F** or **Space** to interact with wall-mounted levers and other environmental objects.
+- **Inventory**: Pick up items (gold, weapons, food) using **TAKE**. Open your **INV** to equip gear or consume items.
 - **Leveling**: Gain XP by defeating monsters to increase your Max HP and stats.
 
 ---
 
 ## 🛠️ Technical Stack
 - **Engine**: Vanilla ES6+ JavaScript.
-- **Graphics**: HTML5 Canvas (Direct context manipulation).
+- **Graphics**: HTML5 Canvas (Geometric stroke rendering).
 - **Tooling**: [Vite](https://vitejs.dev/) for fast development and bundling.
 - **Architecture**: Modular "Manager" pattern (Engine, LevelManager, SoundManager).
 
 ---
 
-## 📅 Status (2026-05-11)
-The engine has evolved into a "Textured Core" state. It now supports full texture mapping and refined UI layouts.
+## 📅 Status (2026-05-12)
+The engine has transitioned to a "Raw Retro" state. All legacy raster textures have been removed in favor of a clean, high-fidelity vector look.
 
 ### Current Priorities:
 1. **Procedural Elements**: Adding map generation capabilities for infinite dungeons.
 2. **Persistence**: Integrating `localStorage` for floor progress and character state.
-3. **Map/Minimap**: Adding a navigation UI element.
+3. **Advanced Interactivity**: Expanding the lever/switch system for puzzle mechanics.
 
 ---
 *Architected for expansion. Optimized for performance.*

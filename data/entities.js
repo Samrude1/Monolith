@@ -88,34 +88,88 @@ export const EntityDefs = {
         name: 'Shortsword',
         type: 'weapon',
         description: 'A basic steel blade. Better than fighting with bare hands.',
-        
-        // Stats/Combat
         atk: 5,
         damage: 10,
         weight: 1.5,
         value: 50,
-        
-        // Visuals
         spriteFile: './data/sprites/Sword.png',
         file: './data/objects/Sword.txt',
         sprite: null,
         vector: []
+    },
+    'dagger': {
+        id: 'dagger',
+        name: 'Dagger',
+        type: 'weapon',
+        description: 'Small but deadly. Very fast to use.',
+        atk: 3,
+        damage: 6,
+        weight: 0.5,
+        value: 20,
+        spriteFile: './data/sprites/Dagger.png',
+        sprite: null
+    },
+    'mace': {
+        id: 'mace',
+        name: 'Mace',
+        type: 'weapon',
+        description: 'A heavy bludgeoning weapon.',
+        atk: 6,
+        damage: 12,
+        weight: 3.0,
+        value: 40,
+        spriteFile: './data/sprites/Mace.png',
+        sprite: null
+    },
+    'leather_armor': {
+        id: 'leather_armor',
+        name: 'Leather Armor',
+        type: 'armor',
+        description: 'Lightweight protection made of cured leather.',
+        def: 5,
+        weight: 4.0,
+        value: 60,
+        spriteFile: './data/sprites/Armor.png',
+        sprite: null
+    },
+    'health_potion': {
+        id: 'health_potion',
+        name: 'Health Potion',
+        type: 'consumable',
+        description: 'A red liquid that heals wounds.',
+        healAmount: 30,
+        value: 25,
+        spriteFile: './data/sprites/Potion.png',
+        sprite: null
+    },
+    'gold_pile': {
+        id: 'gold_pile',
+        name: 'Gold Coins',
+        type: 'currency',
+        description: 'A pile of shiny gold coins.',
+        goldValue: 50,
+        spriteFile: './data/sprites/Gold.png',
+        sprite: null
     },
     'chest': {
         id: 'chest',
         name: 'Treasure Chest',
         type: 'container',
         description: 'A wooden chest bound with iron. Could contain loot.',
-        
-        // Container specific
         isLocked: false,
         lootTable: ['gold', 'food'],
-        
-        // Visuals
         spriteFile: './data/sprites/Chest.png',
-        file: './data/objects/Chest.txt',
-        sprite: null,
-        vector: []
+        sprite: null
+    },
+    'lever': {
+        id: 'lever',
+        name: 'Iron Lever',
+        type: 'interactive',
+        description: 'A heavy iron lever. It seems to be connected to something.',
+        width: 0.5,
+        scale: 0.6,
+        yOffset: -0.1, // Slightly above center
+        sprite: null
     }
 };
 

@@ -2,6 +2,9 @@ import { EntityDefs } from './data/entities/registry.js';
 
 const Entities = EntityDefs;
 
+import { STORY_DATA } from './data/story.js';
+import { VectorSprites } from './systems/vectorSprites.js';
+
 export class GameEngine {
     constructor(canvas, ui) {
         this.canvas = canvas;
@@ -215,6 +218,24 @@ export class GameEngine {
             this.map[ty][tx] = 'd'; // Open door (stays visible but walkable)
             return "You opened a door.";
         }
+
+        // Check for interactive decals on the wall face
+        const lookDirs = ['S', 'W', 'N', 'E'];
+        const targetFacing = lookDirs[dir];
+        const decal = this.entities.find(e => 
+            e.type === 'decal' && 
+            Math.floor(e.x) === tx && 
+            Math.floor(e.y) === ty && 
+            e.facing === targetFacing
+        );
+
+        if (decal) {
+            if (decal.monsterType === 'lever') {
+                return "The lever is stuck... for now.";
+            }
+            return `You examine the ${decal.monsterType.toUpperCase()}.`;
+        }
+
         return null;
     }
 
@@ -521,7 +542,21 @@ export class GameEngine {
                 const s1 = proj(c1);
                 const s2 = proj(c2);
                 
-                if (s1.sx > s2.sx) {
+                const typeKey = ent.monsterType.toUpperCase();
+                const hasVector = !!VectorSprites[typeKey];
+
+                if (hasVector) {
+                    faces.push({
+                        type: 'vector-wall-decal',
+                        monsterType: typeKey,
+                        x1: s1.sx, yT1: s1.yT, yB1: s1.yB,
+                        x2: s2.sx, yT2: s2.yT, yB2: s2.yB,
+                        dist: ((c1.rz + c2.rz) / 2) - 0.001,
+                        z1: c1.rz, z2: c2.rz,
+                        vScale: def.scale || 1.0,
+                        vOffset: def.yOffset || 0.0
+                    });
+                } else if (s1.sx > s2.sx) {
                     faces.push({
                         type: 'wall-decal',
                         sprite: def.sprite,
@@ -562,10 +597,41 @@ export class GameEngine {
             const lungeFrame = ent.attackAnimTime > 0 ? 1 : 0;
             const lunge = lungeFrame * 35;
 
-            if (def.sprite) {
-                // Billboard Sprite Rendering
+            // Check if we have a vector sprite for this type (prioritize it)
+            const typeKey = ent.monsterType.toUpperCase();
+            const hasVector = !!VectorSprites[typeKey];
+
+            const NEAR = 0.1;
+            const distWithLunge = Math.max(NEAR, rz - (lunge * 0.01));
+
+            if (hasVector) {
+                // Billboard Vector Sprite
                 const rx = -dx * sinA + dy * cosA;
-                const f = this.focalLength / (rz - (lunge * 0.01));
+                const f = this.focalLength / distWithLunge;
+                const sx = rx * f + (this.canvas.width / 2);
+                
+                let sy = (this.canvas.height / 2) + bobOffset;
+                const scale = def.scale || 1;
+                const yOffset = def.yOffset || 0;
+                
+                if (def.onFloor) {
+                    sy += f * (0.5 - scale / 2 + yOffset);
+                } else {
+                    sy += ((def.anchorY ?? 0) + yOffset) * f;
+                }
+                const size = f * scale;
+
+                faces.push({
+                    type: 'vector-sprite',
+                    monsterType: typeKey,
+                    sx, sy, size,
+                    dist: distWithLunge,
+                    hitTimer: ent.hitTimer || 0
+                });
+            } else if (def.sprite) {
+                // Billboard Sprite Rendering (Legacy PNG)
+                const rx = -dx * sinA + dy * cosA;
+                const f = this.focalLength / distWithLunge;
                 const sx = rx * f + (this.canvas.width / 2);
                 
                 // Automate floor placement if onFloor is true
@@ -587,20 +653,6 @@ export class GameEngine {
                     sx, sy, size,
                     dist: rz - (lunge * 0.01),
                     hitTimer: ent.hitTimer || 0
-                });
-            } else {
-                // Billboard Vector Box Fallback
-                const rx = -dx * sinA + dy * cosA;
-                const f = this.focalLength / (rz - (lunge * 0.01));
-                const sx = rx * f + (this.canvas.width / 2);
-                const sy = (this.canvas.height / 2) + bobOffset;
-                const size = f * 0.6;
-
-                faces.push({
-                    type: 'vector-box',
-                    name: def.name,
-                    sx, sy, size,
-                    dist: rz - (lunge * 0.01)
                 });
             }
         });
@@ -682,19 +734,99 @@ export class GameEngine {
                 }
 
                 ctx.restore();
-            } else if (f.type === 'vector-box') {
-                // Draw Billboarded Placeholder Box
-                const s = f.size;
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(f.sx - s / 2, f.sy - s / 2, s, s);
+            } else if (f.type === 'vector-wall-decal') {
+                const drawFunc = VectorSprites[f.monsterType];
+                if (!drawFunc) continue;
 
-                // Draw name centered in the box
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 16px monospace';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(String(f.name ?? '').toUpperCase(), f.sx, f.sy);
+                ctx.save();
+                const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
+                ctx.strokeStyle = `rgba(255,255,255,${fog})`;
+                ctx.lineWidth = 2;
+
+                // Perspective Mapper: Maps normalized sprite coords (-s/2 to s/2) to wall trapezoid
+                const map = (vx, vy) => {
+                    // vx, vy are roughly -size/2 to size/2. Normalize to 0...1
+                    const size = 100; // Reference size used in sprite functions
+                    const u = (vx / size) + 0.5; 
+                    const v = (vy / size) + 0.5;
+                    
+                    // Perspective-correct U interpolation
+                    const z_inv = (1 / f.z1) * (1 - u) + (1 / f.z2) * u;
+                    const z = 1 / z_inv;
+                    
+                    // X is linear in screen space after perspective projection? 
+                    // Actually, for a small decal, let's just do bilinear on screen coords for simplicity
+                    const sx = f.x1 + (f.x2 - f.x1) * u;
+                    const yT = f.yT1 + (f.yT2 - f.yT1) * u;
+                    const yB = f.yB1 + (f.yB2 - f.yB1) * u;
+                    
+                    // Vertical interpolation with scale and offset
+                    const wallH = yB - yT;
+                    const cy = (yT + yB) / 2 + (f.vOffset * wallH);
+                    const sy = cy + (v - 0.5) * wallH * f.vScale;
+                    
+                    return { x: sx, y: sy };
+                };
+
+                // Create a Proxy context to intercept drawing calls and apply perspective
+                const proxy = {
+                    beginPath: () => ctx.beginPath(),
+                    moveTo: (x, y) => { const p = map(x, y); ctx.moveTo(p.x, p.y); },
+                    lineTo: (x, y) => { const p = map(x, y); ctx.lineTo(p.x, p.y); },
+                    arc: (x, y, r, sa, ea) => {
+                        const p = map(x, y);
+                        const radiusScale = (f.yB1 - f.yT1) / 100;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, r * radiusScale, sa, ea);
+                        ctx.stroke();
+                    },
+                    strokeRect: (x, y, w, h) => {
+                        const p1 = map(x, y);
+                        const p2 = map(x + w, y);
+                        const p3 = map(x + w, y + h);
+                        const p4 = map(x, y + h);
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                        ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
+                        ctx.closePath();
+                        ctx.stroke();
+                    },
+                    stroke: () => ctx.stroke(),
+                    closePath: () => ctx.closePath(),
+                    ellipse: (x, y, rx, ry, rot, sa, ea) => {
+                         const p = map(x, y);
+                         ctx.ellipse(p.x, p.y, rx, ry, rot, sa, ea);
+                    }
+                };
+
+                drawFunc(proxy, 100); // Call with fixed reference size 100
+                ctx.restore();
+            } else if (f.type === 'vector-sprite') {
+                // Draw Geometric Vector Monster
+                const s = f.size;
+                const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
+                const colorVal = Math.floor(255 * fog);
+                
+                ctx.save();
+                ctx.translate(f.sx, f.sy);
+                
+                // FLASH EFFECT
+                if (f.hitTimer > 0) {
+                    ctx.strokeStyle = '#fff';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#fff';
+                    ctx.lineWidth = 4;
+                } else {
+                    ctx.strokeStyle = `rgb(${colorVal},${colorVal},${colorVal})`;
+                    ctx.shadowBlur = 0;
+                    ctx.lineWidth = 2;
+                }
+
+                // Call the specific drawing function for this monster type
+                const drawFunc = VectorSprites[f.monsterType] || VectorSprites['DEFAULT'];
+                drawFunc(ctx, s);
+                
+                ctx.restore();
             } else if (f.type === 'dot') {
                 // Draw floor dust with perspective scaling
                 const fog = Math.max(0, 1 - (f.dist / this.theme.fogDist));

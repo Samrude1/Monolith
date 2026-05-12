@@ -123,24 +123,14 @@ export const ItemDefs = {
         type: 'object',
         sprite: null, vector: []
     },
-    'wall_lever': {
-        id: 'wall_lever',
+    'lever': {
+        id: 'lever',
         name: 'Iron Lever',
-        type: 'surface', // Use the new surface type
-        description: 'A heavy iron lever. It looks like it could trigger a mechanism.',
-        spriteFile: 'assets/textures/entities/potion.png', 
-        file: './data/objects/Lever.txt',
-        scale: 0.4,
-        wScale: 0.3,
-        sprite: null, vector: []
-    },
-    'potion_decal': {
-        id: 'potion_decal',
-        name: 'Wall Potion',
-        spriteFile: 'assets/textures/entities/potion.png', 
+        type: 'interactive',
+        description: 'A heavy iron lever. It seems to be connected to something.',
         width: 0.5,
-        scale: 0.5,
-        yOffset: 0.0,
-        sprite: null, vector: []
+        scale: 0.6,
+        yOffset: 0.1, // Aligned towards waistline
+        sprite: null
     }
 };

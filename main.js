@@ -4,6 +4,7 @@ import { EntityDefs } from './data/entities/registry.js';
 import { loadMonsterFromFile } from './systems/monsterLoader.js';
 import { sounds } from './systems/sound.js';
 import { StorySystem } from './systems/story.js';
+import { VectorSprites } from './systems/vectorSprites.js';
 
 
 const canvas = document.getElementById('gameCanvas');
@@ -68,6 +69,7 @@ window.addEventListener('keydown', (e) => {
             handleRotate(1);
             break;
         case ' ':
+        case 'f':
             handleInteract();
             break;
     }
@@ -501,7 +503,23 @@ function updateInventoryUI() {
         
         const item = playerState.inventory[i];
         if (item) {
-            if (item.spriteFile) {
+            const typeKey = item.id.toUpperCase();
+            const drawFunc = VectorSprites[typeKey];
+
+            if (drawFunc) {
+                // Render Vector Sprite onto a small canvas for the inventory slot
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.translate(32, 32); // Center
+                drawFunc(ctx, 40); // Size 40 for the slot
+                
+                slot.appendChild(canvas);
+            } else if (item.spriteFile) {
                 const img = document.createElement('img');
                 img.src = item.spriteFile;
                 slot.appendChild(img);

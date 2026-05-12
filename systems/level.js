@@ -151,10 +151,10 @@ export class LevelManager {
             if (floorNum === 1) {
                 this.engine.entities.push({
                     type: 'decal',
-                    monsterType: 'potion_decal',
+                    monsterType: 'lever',
                     x: 3,
                     y: 2,
-                    facing: 'N'
+                    facing: 'W'
                 });
             }
 
