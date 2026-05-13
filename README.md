@@ -8,6 +8,12 @@ A professional, high-performance pseudo-3D dungeon crawler engine built with Van
   <em>The new high-fidelity vector/wireframe rendering pipeline.</em>
 </p>
 
+<p align="center">
+  <img src="./images/screenshot3.png" alt="Monolith Gameplay" width="800">
+  <br>
+  <em>Dynamic interaction and entity rendering.</em>
+</p>
+
 ## 🎮 Overview
 
 **Monolith** is a technical showcase of first-person dungeon crawler (DRPG) mechanics. It features a custom rendering pipeline that simulates a 3D perspective using perspective-correct transformations, billboarding, and distance-based atmospheric effects.
