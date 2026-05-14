@@ -65,16 +65,16 @@ Follow these steps to get the game running on your local machine.
 Explore the depths of the Monolith, defeat monsters, and find your way to the deeper floors.
 
 ### Controls
-| Action | Keyboard | UI Button |
-| :--- | :--- | :--- |
-| **Move Forward** | `W` / `↑` | `UP` |
-| **Move Backward** | `S` / `↓` | `DOWN` |
-| **Strafe** | `A` / `D` | - |
-| **Turn Left/Right** | `Q` / `E` | `LEFT` / `RIGHT` |
-| **Interact / Use** | `F` / `Space` | `USE` |
-| **Attack** | - | `ATTACK` |
-| **Defend / Parry** | - | `DEFEND` |
-| **Inventory** | - | `INV` |
+| Action              | Keyboard      | UI Button        |
+| :------------------ | :------------ | :--------------- |
+| **Move Forward**    | `W` / `↑`     | `UP`             |
+| **Move Backward**   | `S` / `↓`     | `DOWN`           |
+| **Strafe**          | `A` / `D`     | -                |
+| **Turn Left/Right** | `Q` / `E`     | `LEFT` / `RIGHT` |
+| **Interact / Use**  | `F` / `Space` | `USE`            |
+| **Attack**          | -             | `ATTACK`         |
+| **Defend / Parry**  | -             | `DEFEND`         |
+| **Inventory**       | -             | `INV`            |
 
 ### Gameplay Mechanics
 - **Exploration**: Use the movement keys to navigate the grid-based dungeon. Look for stairs to go up (`<`) or down (`>`).
@@ -85,11 +85,35 @@ Explore the depths of the Monolith, defeat monsters, and find your way to the de
 
 ---
 
-## 🛠️ Technical Stack
+## 🛠️ Technical Stack & Implementation
+
+### Core Technologies
 - **Engine**: Vanilla ES6+ JavaScript.
 - **Graphics**: HTML5 Canvas (Geometric stroke rendering).
 - **Tooling**: [Vite](https://vitejs.dev/) for fast development and bundling.
 - **Architecture**: Modular "Manager" pattern (Engine, LevelManager, SoundManager).
+
+---
+
+### Technical Implementation
+
+**3D Engine Technology**
+The engine is built using pure **Vanilla JavaScript** and the **HTML5 Canvas API**. It does not use external 3D libraries (like Three.js); instead, it implements perspective mathematically:
+- **Pseudo-3D Rendering**: Although the engine operates on a grid, it uses perspective-correct transformations and the "Painter's Algorithm" for depth management (drawing the furthest objects first).
+- **Vector-Based Rendering**: The engine projects 3D coordinates onto a 2D plane and draws walls as dynamic trapezoids. This enables a sharp and minimalist "Raw Retro" vector aesthetic without the need for raster textures.
+- **Performance**: Optimized for smooth browser performance, the engine utilizes efficient distance-based fog effects and visibility culling (only surfaces near the player are calculated).
+
+**Building Levels from ASCII Files**
+The game reads level structures directly from ASCII text files (e.g., `Level.txt`):
+1. **Loading and Parsing**: `engine.js` fetches the text file (e.g., `Level1.txt`) and converts it character-by-character into a 2D array (Grid).
+2. **Symbols**: Each character represents a specific element in the game world:
+   - `#` : Wall
+   - `.` : Floor
+   - `D` : Closed door (Interactive obstacle)
+   - `d` : Open door (Walkable)
+   - `S` : Player spawn point
+   - `>` / `<` : Stairs down/up
+3. **Rendering Process**: During rendering, the engine scans the grid within the player's field of view. It identifies wall faces whenever a solid cell (`#` or `D`) is adjacent to an empty space. These faces are sorted by distance and drawn in order to create a proper sense of depth.
 
 ---
 
