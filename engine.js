@@ -697,16 +697,16 @@ export class GameEngine {
                 const h = f.size;
                 const w = h * aspect;
                 
-                // Distance darkening: full color up close, dark at distance
-                // Min 0.10 so silhouette is always visible — no ghosting
-                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
-                ctx.globalAlpha = 1.0;
-
+                // Distance darkening: fade out into the fog
+                const distBrightness = Math.max(0.0, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                
                 // FLASH EFFECT (White hit flash overrides darkening)
                 if (f.hitTimer > 0) {
+                    ctx.globalAlpha = 1.0;
                     ctx.filter = 'brightness(10)';
                 } else {
-                    ctx.filter = `brightness(${distBrightness})`;
+                    ctx.globalAlpha = distBrightness;
+                    ctx.filter = 'none';
                 }
 
                 // Draw image
@@ -721,14 +721,14 @@ export class GameEngine {
                 if (!isReady || screenWidth <= 0.5) continue;
                 
                 
-                // Distance darkening: darken the decal color, stay fully opaque
                 ctx.save();
                 ctx.globalCompositeOperation = 'source-over';
-                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
-                ctx.globalAlpha = 1.0;
-                ctx.filter = `brightness(${distBrightness})`;
+                
+                // Distance darkening: fade out into the fog (blends with the dark wall behind it)
+                const distBrightness = Math.max(0.0, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                ctx.globalAlpha = distBrightness;
 
-                const sliceWidth = 1;
+                const sliceWidth = 2; // Increased slice width to 2 to halve draw calls
                 for (let sx = 0; sx < screenWidth; sx += sliceWidth) {
                     const t = sx / screenWidth;
                     const z_inv = (1 / f.z1) * (1 - t) + (1 / f.z2) * t;
@@ -823,11 +823,12 @@ export class GameEngine {
             } else if (f.type === 'vector-sprite') {
                 // Draw Geometric Vector Monster
                 const s = f.size;
-                // Distance darkening via color value — full white up close, dim far away
-                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                // Distance darkening via color value — fade out in distance
+                const distBrightness = Math.max(0.0, 1 - ((f.dist * 1.3) / this.theme.fogDist));
                 const colorVal = Math.floor(255 * distBrightness);
-                // Vector sprites always at full brightness — no fog dimming
+                // Vector sprites fade via alpha now too
                 ctx.save();
+                ctx.globalAlpha = distBrightness;
                 ctx.translate(f.sx, f.sy);
 
                 // FLASH EFFECT
@@ -934,12 +935,14 @@ export class GameEngine {
                                     xL_int + sx, topY + i * segmentH, sliceWidth + 0.5, segmentH + 1
                                 );
                             }
-
-                            
-                            // SUBTLE TINT FOR WALLS
-                            ctx.fillStyle = 'rgba(0, 50, 150, 0.05)';
-                            ctx.fillRect(xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1);
                         }
+
+                        // SUBTLE TINT FOR WALLS (Done ONCE per wall, not per slice)
+                        ctx.fillStyle = 'rgba(0, 50, 150, 0.05)';
+                        ctx.beginPath();
+                        ctx.moveTo(xL_int, yTL); ctx.lineTo(xR_int + 2, yTR);
+                        ctx.lineTo(xR_int + 2, yBR); ctx.lineTo(xL_int, yBL);
+                        ctx.fill();
 
                         // If using wall texture as a fallback for a door, darken it
                         if (f.isDoor && img === this.theme.wallTextureImg) {
