@@ -486,23 +486,7 @@ export class GameEngine {
                 }
 
                 // --- Collect Floor Noise (Dust) ---
-                if (!isSolid) {
-                    for (let i = 0; i < 3; i++) {
-                        const rx = this.hash(gx, gy, i, 1);
-                        const ry = this.hash(gx, gy, i, 2);
-                        const dx_p = (gx + rx) - x;
-                        const dy_p = (gy + ry) - y;
-                        const rz_p = dx_p * cosA + dy_p * sinA;
-
-                        if (rz_p > 0.1 && rz_p < range) {
-                            const f = this.focalLength / rz_p;
-                            const rx_p = -dx_p * sinA + dy_p * cosA;
-                            const sx = rx_p * f + (this.canvas.width / 2);
-                            const sy = 0.5 * f + (this.canvas.height / 2); 
-                            faces.push({ type: 'dot', sx, sy, dist: rz_p });
-                        }
-                    }
-                }
+                // Disabled for performance
             }
         }
 
@@ -713,14 +697,16 @@ export class GameEngine {
                 const h = f.size;
                 const w = h * aspect;
                 
-                const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
-                ctx.globalAlpha = fog;
-                
-                // FLASH EFFECT (White hit flash)
+                // Distance darkening: full color up close, dark at distance
+                // Min 0.10 so silhouette is always visible — no ghosting
+                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                ctx.globalAlpha = 1.0;
+
+                // FLASH EFFECT (White hit flash overrides darkening)
                 if (f.hitTimer > 0) {
-                    ctx.filter = 'brightness(10)'; // Turn sprite white
+                    ctx.filter = 'brightness(10)';
                 } else {
-                    ctx.filter = 'none';
+                    ctx.filter = `brightness(${distBrightness})`;
                 }
 
                 // Draw image
@@ -735,15 +721,13 @@ export class GameEngine {
                 if (!isReady || screenWidth <= 0.5) continue;
                 
                 
-                // Draw decal with fog
+                // Distance darkening: darken the decal color, stay fully opaque
                 ctx.save();
-                ctx.globalCompositeOperation = 'source-over'; 
-                ctx.filter = 'none'; 
-                
-                const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
-                ctx.globalAlpha = fog;
+                ctx.globalCompositeOperation = 'source-over';
+                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                ctx.globalAlpha = 1.0;
+                ctx.filter = `brightness(${distBrightness})`;
 
-                
                 const sliceWidth = 1;
                 for (let sx = 0; sx < screenWidth; sx += sliceWidth) {
                     const t = sx / screenWidth;
@@ -767,7 +751,7 @@ export class GameEngine {
                         f.x1 + sx, dy, 1.5, dh + 1
                     );
                 }
-
+                ctx.filter = 'none';
                 ctx.restore();
             } else if (f.type === 'vector-wall-decal') {
                 const drawFunc = VectorSprites[f.monsterType];
@@ -839,12 +823,13 @@ export class GameEngine {
             } else if (f.type === 'vector-sprite') {
                 // Draw Geometric Vector Monster
                 const s = f.size;
-                const fog = Math.max(0, 1 - ((f.dist * 1.4) / this.theme.fogDist));
-                const colorVal = Math.floor(255 * fog);
-                
+                // Distance darkening via color value — full white up close, dim far away
+                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                const colorVal = Math.floor(255 * distBrightness);
+                // Vector sprites always at full brightness — no fog dimming
                 ctx.save();
                 ctx.translate(f.sx, f.sy);
-                
+
                 // FLASH EFFECT
                 if (f.hitTimer > 0) {
                     ctx.strokeStyle = '#fff';
@@ -862,18 +847,6 @@ export class GameEngine {
                 drawFunc(ctx, s);
                 
                 ctx.restore();
-            } else if (f.type === 'dot') {
-                // Draw floor dust with perspective scaling
-                const fog = Math.max(0, 1 - (f.dist / this.theme.fogDist));
-                if (fog > 0) {
-                    const gray = Math.floor(180 * fog);
-                    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
-                    ctx.globalAlpha = fog * 0.8; // Fade out far dust
-                    // Perspective scaling: size decreases faster with distance
-                    const s = Math.max(1, Math.floor(this.theme.dustSize * (fog * fog)));
-                    ctx.fillRect(f.sx - s/2, f.sy - s/2, s, s);
-                    ctx.globalAlpha = 1.0;
-                }
             } else {
                 ctx.beginPath();
                 ctx.strokeStyle = 'rgba(0,0,0,0)'; // RESET to transparent to prevent any leaks
@@ -924,25 +897,43 @@ export class GameEngine {
                             const u = ((uL / zL) * (1 - t) + (uR / zR) * t) / z_inv;
                             const topY = yTL + (yTR - yTL) * t;
                             const bottomY = yBL + (yBR - yBL) * t;
-                            const sourceX = (u * img.width) | 0;
+                            
+                            const texScale = isDoor ? 1 : (this.theme.textureScale || 1.0);
+                            let scaledU = u * texScale;
+                            scaledU = scaledU - Math.floor(scaledU);
+                            const sourceX = (scaledU * img.width) | 0;
                             const clampedSx = Math.max(0, Math.min(img.width - 1, sourceX));
                             
                             // Draw wall texture behind the door if it's a door and has a distinct texture
                             if (f.isDoor && this.theme.wallTextureImg && img !== this.theme.wallTextureImg) {
-                                const wallSourceX = (u * this.theme.wallTextureImg.width) | 0;
+                                const wallTexScale = this.theme.textureScale || 1.0;
+                                let scaledWallU = u * wallTexScale;
+                                scaledWallU = scaledWallU - Math.floor(scaledWallU);
+                                const wallSourceX = (scaledWallU * this.theme.wallTextureImg.width) | 0;
                                 const clampedWallSx = Math.max(0, Math.min(this.theme.wallTextureImg.width - 1, wallSourceX));
-                                ctx.drawImage(
-                                    this.theme.wallTextureImg,
-                                    clampedWallSx, 0, 1, this.theme.wallTextureImg.height,
-                                    xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1
-                                );
+                                
+                                const wallVertScale = Math.floor(wallTexScale);
+                                const wallH = bottomY - topY;
+                                const segmentH = wallH / wallVertScale;
+                                for (let i = 0; i < wallVertScale; i++) {
+                                    ctx.drawImage(
+                                        this.theme.wallTextureImg,
+                                        clampedWallSx, 0, 1, this.theme.wallTextureImg.height,
+                                        xL_int + sx, topY + i * segmentH, sliceWidth + 0.5, segmentH + 1
+                                    );
+                                }
                             }
 
-                            ctx.drawImage(
-                                img,
-                                clampedSx, 0, 1, img.height,
-                                xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1
-                            );
+                            const vertScale = isDoor ? 1 : Math.floor(this.theme.textureScale || 1.0);
+                            const wallH = bottomY - topY;
+                            const segmentH = wallH / vertScale;
+                            for (let i = 0; i < vertScale; i++) {
+                                ctx.drawImage(
+                                    img,
+                                    clampedSx, 0, 1, img.height,
+                                    xL_int + sx, topY + i * segmentH, sliceWidth + 0.5, segmentH + 1
+                                );
+                            }
 
                             
                             // SUBTLE TINT FOR WALLS
@@ -1182,9 +1173,10 @@ export class GameEngine {
             const fog = Math.max(0, 1 - ((dist * fogMult) / this.theme.fogDist));
             const fogVal = Math.floor(255 * (1 - fog));
 
+            const texScale = this.theme.textureScale || 1.0;
             for (let x = 0; x < bufW; x++) {
-                const tx = ((worldX * tw) % tw + tw) % tw | 0;
-                const ty = ((worldY * th) % th + th) % th | 0;
+                const tx = (((worldX * texScale) * tw) % tw + tw) % tw | 0;
+                const ty = (((worldY * texScale) * th) % th + th) % th | 0;
                 
                 let c = tp[ty * tw + tx];
                 

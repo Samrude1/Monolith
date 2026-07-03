@@ -1,12 +1,65 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+/* ============================================================
+   RETRO ADVENTURE — UI DESIGN SYSTEM (1990s DRPG)
+   NO blur, NO glow, NO gradients, NO glass. Hard pixels only.
+   ============================================================ */
+
 :root {
-    --bg-color: #000000;
-    --line-color: #ffffff;
-    --glow-color: rgba(255, 255, 255, 0.4);
-    --font-main: 'Press Start 2P', cursive;
-    --panel-bg: rgba(0, 0, 0, 0.9);
+    /* --- Core Palette --- */
+    --bg-color:         #080808;
+    --panel-bg:         #0d0d0d;
+    --panel-border:     #b8860b;      /* Goldenrod */
+    --panel-border-lit: #daa520;      /* Hover gold */
+
+    /* --- Typography --- */
+    --font-main:        'Press Start 2P', cursive;
+    --color-text:       #c8b87a;      /* Parchment */
+    --color-text-dim:   #7a6640;
+    --color-text-bright:#ffe080;
+
+    /* --- HP --- */
+    --hp-high:  #00cc44;
+    --hp-mid:   #ccaa00;
+    --hp-low:   #cc2200;
+    --hp-bg:    #110000;
+
+    /* --- Action Buttons (Green) --- */
+    --btn-action-bg:    #001800;
+    --btn-action-border:#2a7a2a;
+    --btn-action-hover: #003800;
+    --btn-action-text:  #44cc44;
+
+    /* --- Movement Buttons (Blue) --- */
+    --btn-move-bg:      #000018;
+    --btn-move-border:  #1a3a99;
+    --btn-move-hover:   #001440;
+    --btn-move-text:    #5588ee;
+
+    /* --- XP / Progress (Purple) --- */
+    --xp-bg:      #0e0018;
+    --xp-border:  #5522aa;
+    --xp-text:    #aa66ff;
+
+    /* --- Message Log --- */
+    --log-bg:           #050505;
+    --log-border:       #b8860b;
+    --log-text:         #66aa66;
+    --log-text-damage:  #ee3333;
+    --log-text-loot:    #ccaa00;
+    --log-text-warning: #dd8800;
+    --log-text-combat:  #cc6622;
+    --log-text-system:  #555544;
+
+    /* --- Story --- */
+    --story-bg:     #00000e;
+    --story-border: #223388;
+    --story-text:   #aabbee;
 }
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
 
 * {
     margin: 0;
@@ -20,8 +73,8 @@ html, body, #game-wrapper, button, .inv-slot {
 }
 
 body {
-    background-color: #111;
-    color: var(--line-color);
+    background-color: #000000;
+    color: var(--color-text);
     font-family: var(--font-main);
     display: flex;
     justify-content: center;
@@ -30,24 +83,30 @@ body {
     overflow: hidden;
 }
 
+/* ============================================================
+   GAME WRAPPER
+   ============================================================ */
+
 #game-wrapper {
     display: flex;
     flex-direction: column;
     width: 1200px;
     height: 800px;
-    border: 3px solid var(--line-color);
+    border: 3px solid var(--panel-border);
     position: relative;
     background: var(--bg-color);
     transform-origin: center center;
     transition: transform 0.3s ease-out;
-    filter: contrast(1.2) brightness(1.1); /* Colors restored */
 }
 
-/* Overlays */
+/* ============================================================
+   MENU OVERLAYS
+   ============================================================ */
+
 .overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--bg-color);
+    background: #000000;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -57,27 +116,26 @@ body {
 
 .menu-content {
     text-align: center;
-    border: 3px double var(--line-color);
+    border: 3px double var(--panel-border);
     padding: 60px;
-    background: #000;
+    background: #080808;
+    min-width: 480px;
 }
+
+/* ============================================================
+   MAIN MENU TITLE
+   ============================================================ */
 
 .rpg-title {
-    font-size: 48px;
-    letter-spacing: 5px;
-    margin-bottom: 40px;
+    font-size: 46px;
+    letter-spacing: 4px;
+    margin-bottom: 50px;
+    color: var(--panel-border-lit);
 }
 
-.menu-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.rpg-btn.large {
-    font-size: 36px;
-    padding: 15px 40px;
-}
+/* ============================================================
+   SETTINGS
+   ============================================================ */
 
 .setting-group {
     display: flex;
@@ -90,191 +148,259 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 350px;
-    font-size: 28px;
+    width: 380px;
+    font-size: 13px;
+    color: var(--color-text);
+    gap: 20px;
+}
+
+.setting-row label {
+    color: var(--color-text-dim);
 }
 
 .rpg-select {
-    background: #000;
-    color: #fff;
-    border: 2px solid #fff;
+    background: var(--btn-action-bg);
+    color: var(--btn-action-text);
+    border: 2px solid var(--btn-action-border);
     font-family: var(--font-main);
-    font-size: 24px;
-    padding: 5px;
+    font-size: 11px;
+    padding: 6px 8px;
     outline: none;
+    cursor: pointer;
 }
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
 
 #main-layout {
     display: flex;
     flex: 1;
-    border-bottom: 2px solid var(--line-color);
+    border-bottom: 2px solid var(--panel-border);
     overflow: hidden;
 }
 
-/* Side Panels */
+/* ============================================================
+   SIDE PANELS
+   ============================================================ */
+
 .ui-panel {
     width: 210px;
     display: flex;
     flex-direction: column;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(5px);
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    background: var(--panel-bg);
 }
 
 #stats-panel {
-    border-right: 3px double var(--line-color);
+    border-right: 2px solid var(--panel-border);
 }
 
 #action-panel {
-    border-left: 3px double var(--line-color);
+    border-left: 2px solid var(--panel-border);
 }
 
+/* ============================================================
+   PANEL HEADERS
+   ============================================================ */
+
 .panel-header {
-    font-size: 14px;
+    font-size: 11px;
     text-align: center;
-    border-bottom: 2px solid var(--line-color);
-    margin: 20px 0 15px 0;
+    border-bottom: 1px solid var(--panel-border);
+    margin: 18px 0 12px 0;
     padding-bottom: 8px;
-    color: #fff;
+    color: var(--panel-border-lit);
     text-transform: uppercase;
-    letter-spacing: 3px;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
 }
 
 .panel-header:first-child {
     margin-top: 0;
 }
 
+/* ============================================================
+   STAT ROWS
+   ============================================================ */
+
 .stat-group {
-    margin-bottom: 25px;
+    margin-bottom: 18px;
 }
+
+.stat-row {
+    font-size: 11px;
+    margin-bottom: 7px;
+    color: var(--color-text-dim);
+}
+
+.stat-row.small {
+    font-size: 10px;
+    margin-bottom: 5px;
+    color: var(--color-text-dim);
+}
+
+.stat-row span {
+    color: var(--color-text-bright);
+}
+
+/* ============================================================
+   HP BAR
+   ============================================================ */
 
 #hp-bar-container {
     width: 100%;
-    height: 12px;
-    border: 1px solid #fff;
-    margin: 5px 0 15px 0;
-    background: #200;
-    position: relative;
-    box-shadow: 0 0 5px rgba(255, 0, 0, 0.2);
+    height: 14px;
+    border: 1px solid #440000;
+    margin: 6px 0 14px 0;
+    background: var(--hp-bg);
+    /* Pixel segments */
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 6px,
+        rgba(0,0,0,0.4) 6px,
+        rgba(0,0,0,0.4) 7px
+    );
 }
 
 #hp-bar-fill {
     width: 100%;
     height: 100%;
-    background: #c00;
-    transition: width 0.3s ease-out;
-    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+    background: var(--hp-high);
+    transition: width 0.3s ease-out, background-color 0.4s;
 }
 
-.stat-row {
-    font-size: 13px;
-    margin-bottom: 8px;
-    color: #fff;
-}
+#hp-bar-fill.hp-high { background-color: var(--hp-high); }
+#hp-bar-fill.hp-mid  { background-color: var(--hp-mid); }
+#hp-bar-fill.hp-low  { background-color: var(--hp-low); }
 
-.stat-row.small {
-    font-size: 11px;
-    margin-bottom: 6px;
-    color: #bbb;
-}
+/* ============================================================
+   XP / PROGRESS BOX
+   ============================================================ */
 
-.stat-row span {
-    color: #fff;
-    font-weight: bold;
-}
-/* Specialized Progress Box */
 .xp-box {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--xp-bg);
+    border: 1px solid var(--xp-border);
     padding: 10px;
     margin-top: 5px;
     text-align: center;
 }
 
 .xp-row {
-    font-size: 11px;
+    font-size: 10px;
     margin-bottom: 5px;
-    color: #aaa;
+    color: var(--color-text-dim);
 }
 
 .xp-row span {
-    color: #fff;
-    font-size: 14px;
+    color: var(--xp-text);
+    font-size: 13px;
 }
 
 .xp-row.level {
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.2);
-    color: #fff;
+    border-top: 1px dashed var(--xp-border);
+    color: var(--xp-text);
+}
+
+/* ============================================================
+   BUTTONS — BASE RPG STYLE (Action / Green)
+   ============================================================ */
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
 }
 
 .action-buttons {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
 
+#btn-attack, #btn-defend, #btn-inv {
+    grid-column: 1 / -1;
+}
+
 .rpg-btn {
-    background: transparent;
-    color: var(--line-color);
-    border: 2px solid var(--line-color);
+    background: var(--btn-action-bg);
+    color: var(--btn-action-text);
+    border: 2px solid var(--btn-action-border);
     font-family: var(--font-main);
-    font-size: 14px;
-    padding: 10px;
+    font-size: 13px;
+    padding: 11px 14px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.1s, border-color 0.1s;
 }
 
 .rpg-btn:hover {
-    background: var(--line-color);
-    color: var(--bg-color);
+    background: var(--btn-action-hover);
+    border-color: var(--btn-action-text);
+    color: #88ff88;
 }
 
 .rpg-btn:active {
     transform: scale(0.95);
 }
 
+.rpg-btn.large {
+    font-size: 22px;
+    padding: 18px 50px;
+    letter-spacing: 2px;
+}
+
+/* ============================================================
+   MOVEMENT CONTROL BUTTONS (Blue)
+   ============================================================ */
+
 #movement-controls {
     margin-top: auto;
-    padding-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--panel-border);
 }
 
 .control-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 7px;
 }
 
 .ctrl-btn {
     aspect-ratio: 1;
-    background: transparent;
-    color: var(--line-color);
-    border: 2px solid var(--line-color);
+    background: var(--btn-move-bg);
+    color: var(--btn-move-text);
+    border: 2px solid var(--btn-move-border);
     font-family: var(--font-main);
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.1s, border-color 0.1s;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .ctrl-btn:hover {
-    background: var(--line-color);
-    color: var(--bg-color);
+    background: var(--btn-move-hover);
+    border-color: var(--btn-move-text);
+    color: #aabbff;
 }
 
 .ctrl-btn:active {
     transform: scale(0.9);
 }
 
+/* ============================================================
+   MESSAGE LOG / INFO BAR
+   ============================================================ */
+
 #info-bar {
     height: 150px;
-    padding: 15px;
+    padding: 12px 16px;
     overflow: hidden;
+    background: var(--log-bg);
+    border-top: 2px solid var(--panel-border);
 }
 
 #message-log {
@@ -282,43 +408,58 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column-reverse;
+    scrollbar-width: none;
 }
+
+#message-log::-webkit-scrollbar { display: none; }
 
 .message {
-    font-size: 14px;
-    line-height: 1.4;
-    margin-bottom: 6px;
-    animation: fadeIn 0.3s ease-out;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    color: var(--log-text);
+    animation: fadeIn 0.2s ease-out;
 }
 
-.hidden {
-    display: none !important;
-}
+.message-damage  { color: var(--log-text-damage); }
+.message-loot    { color: var(--log-text-loot); }
+.message-warning { color: var(--log-text-warning); }
+.message-combat  { color: var(--log-text-combat); }
+.message-system  { color: var(--log-text-system); }
+
+/* ============================================================
+   GAME OVER OVERLAY
+   ============================================================ */
 
 #game-over-overlay {
-    background: rgba(40, 40, 40, 0.95);
-    border: 5px double #fff;
+    background: #0a0000;
+    border: 5px double #880000;
 }
 
 .death-msg {
-    font-size: 80px;
-    color: #fff;
-    margin-bottom: 10px;
-    letter-spacing: 5px;
-    animation: pulseWhite 2s infinite;
+    font-size: 48px;
+    color: #dd2222;
+    margin-bottom: 16px;
+    letter-spacing: 3px;
+    animation: deathPulse 2s ease-in-out infinite;
+}
+
+@keyframes deathPulse {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
 }
 
 .death-sub {
-    font-size: 32px;
-    color: #fff;
+    font-size: 14px;
+    color: #663333;
     margin-bottom: 40px;
+    letter-spacing: 1px;
 }
 
-@keyframes pulseWhite {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
+/* ============================================================
+   INVENTORY OVERLAY
+   ============================================================ */
 
 #inventory-overlay {
     position: absolute;
@@ -327,54 +468,78 @@ body {
     transform: translate(-50%, -50%);
     width: 600px;
     height: 500px;
-    background: rgba(0, 0, 0, 0.95);
-    border: 3px solid var(--line-color);
+    background: #080808;
+    border: 3px solid var(--panel-border);
     padding: 20px;
     display: flex;
     flex-direction: column;
     z-index: 600;
+    animation: invOpen 0.15s ease-out;
+}
+
+@keyframes invOpen {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 .inventory-header {
     display: flex;
     justify-content: space-between;
-    font-size: 18px;
-    border-bottom: 2px solid var(--line-color);
-    margin-bottom: 20px;
+    align-items: center;
+    font-size: 15px;
+    color: var(--panel-border-lit);
+    border-bottom: 2px solid var(--panel-border);
+    margin-bottom: 18px;
     padding-bottom: 10px;
 }
 
 #btn-close-inv {
-    background: transparent;
-    color: var(--line-color);
-    border: none;
+    background: #200000;
+    color: #cc3333;
+    border: 1px solid #661111;
     font-family: var(--font-main);
-    font-size: 32px;
+    font-size: 16px;
     cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.1s;
+}
+#btn-close-inv:hover {
+    background: #440000;
+    border-color: #cc3333;
 }
 
 #inventory-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 15px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 16px;
     flex: 1;
     overflow-y: auto;
 }
 
 .inv-slot {
     aspect-ratio: 1;
-    border: 2px solid var(--line-color);
+    border: 2px solid #2a2010;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.05);
+    background: #0c0c00;
+    transition: border-color 0.1s, background-color 0.1s;
+}
+
+.inv-slot:hover {
+    border-color: var(--panel-border);
+    background: #181400;
 }
 
 .inv-slot.selected {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: #fff;
+    background: #2a2000;
+    border-color: var(--panel-border-lit);
 }
 
 .inv-slot img {
@@ -385,104 +550,32 @@ body {
 
 #item-details {
     height: 120px;
-    border-top: 2px solid var(--line-color);
-    padding-top: 15px;
+    border-top: 2px solid var(--panel-border);
+    padding-top: 14px;
 }
 
 #item-name {
-    font-size: 16px;
+    font-size: 14px;
     margin-bottom: 8px;
-    color: #fff;
+    color: var(--panel-border-lit);
 }
 
 #item-desc {
-    font-size: 12px;
-    color: #ccc;
+    font-size: 10px;
+    color: var(--color-text);
     margin-bottom: 10px;
-    line-height: 1.4;
+    line-height: 1.6;
 }
 
 #item-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 
-.hit-flash {
-    animation: flashEffect 0.15s ease-out;
-}
+/* ============================================================
+   STORY / NARRATIVE OVERLAY
+   ============================================================ */
 
-#view-container::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 100;
-}
-
-.hit-flash::after {
-    animation: flashEffect 0.15s ease-out;
-}
-
-@keyframes flashEffect {
-    0% { background: rgba(255, 255, 255, 0.8); }
-    100% { background: transparent; }
-}
-
-.hit-flash-player::after {
-    animation: playerFlashEffect 0.15s ease-out;
-}
-
-@keyframes playerFlashEffect {
-    0% { background: rgba(255, 0, 0, 0.5); }
-    100% { background: transparent; }
-}
-
-.critical-hit::after {
-    animation: critFlashEffect 0.2s ease-out;
-}
-
-@keyframes critFlashEffect {
-    0% { background: rgba(255, 215, 0, 0.7); }
-    100% { background: transparent; }
-}
-
-.perfect-parry::after {
-    animation: parryFlashEffect 0.3s ease-out;
-}
-
-@keyframes parryFlashEffect {
-    0% { background: rgba(0, 255, 255, 0.6); }
-    100% { background: transparent; }
-}
-
-.screen-shake {
-    animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-@keyframes shake {
-  10%, 90% { transform: translate3d(-2px, 0, 0); }
-  20%, 80% { transform: translate3d(4px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-  40%, 60% { transform: translate3d(6px, 0, 0); }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* CRT Effects */
-#game-wrapper::after {
-    content: " ";
-    display: block;
-    position: absolute;
-    top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(200, 200, 200, 0.01), rgba(150, 150, 150, 0.02));
-    z-index: 1000;
-    background-size: 100% 4px, 3px 100%;
-    pointer-events: none;
-}
-/* Narrative / Story Overlay */
 .story-overlay {
     position: absolute;
     top: 50%;
@@ -490,19 +583,18 @@ body {
     transform: translate(-50%, -50%);
     width: 700px;
     max-height: 550px;
-    background: #000;
-    border: 4px double #fff;
+    background: var(--story-bg);
+    border: 3px double var(--story-border);
     padding: 30px;
     display: flex;
     flex-direction: column;
     z-index: 700;
-    box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
-    animation: storyFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: storyFadeIn 0.3s ease-out;
 }
 
 .story-header {
-    font-size: 20px;
-    color: #fff;
+    font-size: 18px;
+    color: #7788dd;
     text-align: center;
     margin-bottom: 20px;
     text-decoration: underline;
@@ -519,9 +611,9 @@ body {
 .story-illustration {
     width: 200px;
     height: 200px;
-    border: 2px solid #fff;
+    border: 2px solid var(--story-border);
     flex-shrink: 0;
-    background: #111;
+    background: #000008;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -535,9 +627,9 @@ body {
 
 .story-text {
     flex: 1;
-    font-size: 16px;
-    line-height: 1.8;
-    color: #fff;
+    font-size: 14px;
+    line-height: 2;
+    color: var(--story-text);
     overflow-y: auto;
     padding-right: 10px;
 }
@@ -545,19 +637,108 @@ body {
 .story-footer {
     margin-top: 25px;
     text-align: center;
-    font-size: 12px;
-    color: #888;
+    font-size: 11px;
+    color: #334488;
     letter-spacing: 1px;
-    animation: blink 1s infinite;
+    animation: blink 1.2s step-end infinite;
+}
+
+/* ============================================================
+   COMBAT FLASH EFFECTS
+   ============================================================ */
+
+.hit-flash {
+    animation: flashEffect 0.15s ease-out;
+}
+
+#view-container::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.hit-flash::after         { animation: flashEffect 0.15s ease-out; }
+.hit-flash-player::after  { animation: playerFlashEffect 0.15s ease-out; }
+.critical-hit::after      { animation: critFlashEffect 0.2s ease-out; }
+.perfect-parry::after     { animation: parryFlashEffect 0.3s ease-out; }
+
+@keyframes flashEffect {
+    0%   { background: rgba(255,255,255,0.7); }
+    100% { background: transparent; }
+}
+
+@keyframes playerFlashEffect {
+    0%   { background: rgba(255,0,0,0.5); }
+    100% { background: transparent; }
+}
+
+@keyframes critFlashEffect {
+    0%   { background: rgba(255,200,0,0.7); }
+    100% { background: transparent; }
+}
+
+@keyframes parryFlashEffect {
+    0%   { background: rgba(0,200,255,0.5); }
+    100% { background: transparent; }
+}
+
+/* ============================================================
+   SCREEN SHAKE
+   ============================================================ */
+
+.screen-shake {
+    animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80%  { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+    40%, 60%  { transform: translate3d(6px, 0, 0); }
+}
+
+/* ============================================================
+   MISC ANIMATIONS
+   ============================================================ */
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 @keyframes storyFadeIn {
-    from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
-    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
+/* Classic 1990s step-blink — no smooth fade */
 @keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.3; }
-    100% { opacity: 1; }
+    0%, 49%  { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+/* ============================================================
+   CRT SCANLINES (subtle — period accurate)
+   ============================================================ */
+
+#game-wrapper::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    /* Use a high-performance simple scanline effect instead of repeating-linear-gradient */
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(200, 200, 200, 0.01), rgba(150, 150, 150, 0.02));
+    background-size: 100% 4px, 3px 100%;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+
+.hidden {
+    display: none !important;
 }

@@ -165,6 +165,14 @@ export class LevelManager {
                     targetY: 3,
                     isPulled: false
                 });
+
+                // Add the key inside the secret room
+                this.engine.entities.push({
+                    type: 'object',
+                    monsterType: 'key',
+                    x: 7.5,
+                    y: 3.5
+                });
             }
 
             this.saveCurrentState(); 

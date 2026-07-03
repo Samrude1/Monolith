@@ -14,7 +14,8 @@ const THEMES = {
             wallTexture: 'assets/textures/themes/classic/wall.png',
             floorTexture: 'assets/textures/themes/classic/floor.png',
             ceilingTexture: 'assets/textures/themes/classic/ceiling.png',
-            doorTexture: 'assets/textures/themes/classic/door.png'
+            doorTexture: 'assets/textures/themes/classic/door.png',
+            textureScale: 1.0
         },
         spawn: {
             monsterCount: 6,

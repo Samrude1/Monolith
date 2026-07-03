@@ -21,7 +21,21 @@ const storySystem = new StorySystem(engine);
 
 function addLog(msg) {
     const div = document.createElement('div');
-    div.className = 'message';
+    // Auto-classify message type by keyword for color coding
+    const lower = msg.toLowerCase();
+    let cls = 'message';
+    if (lower.includes('hits you') || lower.includes('perished') || lower.includes('broken') || lower.includes('dmg!') && lower.includes('you')) {
+        cls += ' message-damage';
+    } else if (lower.includes('you hit') || lower.includes('critical hit') || lower.includes('obliterate') || lower.includes('counter-attack')) {
+        cls += ' message-combat';
+    } else if (lower.includes('gold') || lower.includes('picked up') || lower.includes('dropped') || lower.includes('found') || lower.includes('loot')) {
+        cls += ' message-loot';
+    } else if (lower.includes('level up') || lower.includes('perfect parry') || lower.includes('parry') || lower.includes('block')) {
+        cls += ' message-warning';
+    } else if (lower.includes('bump') || lower.includes('empty') || lower.includes('nothing') || lower.includes('blocked')) {
+        cls += ' message-system';
+    }
+    div.className = cls;
     div.innerText = `> ${msg}`;
     ui.log.prepend(div);
 }
@@ -217,9 +231,14 @@ function updateStatsUI() {
 
     document.getElementById('hp-value').innerText = `${playerState.hp}/${playerState.maxHp}`;
     
-    // Update HP Bar
+    // Update HP Bar — dynamic color based on HP%
     const hpPercent = Math.max(0, (playerState.hp / playerState.maxHp) * 100);
-    document.getElementById('hp-bar-fill').style.width = `${hpPercent}%`;
+    const hpFill = document.getElementById('hp-bar-fill');
+    hpFill.style.width = `${hpPercent}%`;
+    hpFill.classList.remove('hp-high', 'hp-mid', 'hp-low');
+    if (hpPercent > 50)      hpFill.classList.add('hp-high');
+    else if (hpPercent > 25) hpFill.classList.add('hp-mid');
+    else                     hpFill.classList.add('hp-low');
     
     const dirs = ['N', 'E', 'S', 'W'];
     document.getElementById('dir-value').innerText = dirs[engine.player.targetDir];

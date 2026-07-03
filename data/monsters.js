@@ -9,6 +9,7 @@ export const MonsterDefs = {
         hp: 30,
         attack: 8,
         speed: 0.5,
+        scale: 0.85,
         spriteFile: './data/sprites/Skeleton.png',
         sprite: null,   // loaded at startup
         file: './data/monsters/Skeleton.txt',
