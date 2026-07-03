@@ -22,7 +22,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/apple.png',
         file: './data/objects/Food.txt',
         sprite: null, vector: [],
-        scale: 0.35, onFloor: true, yOffset: 0.25
+        scale: 0.6, onFloor: true, yOffset: 0.25
     },
     'sword': {
         id: 'sword',
@@ -131,6 +131,7 @@ export const ItemDefs = {
         width: 0.5,
         scale: 0.6,
         yOffset: 0.1, // Aligned towards waistline
+        spriteFile: 'assets/textures/entities/lever.png',
         sprite: null
     }
 };

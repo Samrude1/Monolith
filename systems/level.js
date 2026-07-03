@@ -154,7 +154,10 @@ export class LevelManager {
                     monsterType: 'lever',
                     x: 3,
                     y: 2,
-                    facing: 'W'
+                    facing: 'W',
+                    targetX: 3, // Coordinate of the secret passage
+                    targetY: 3,
+                    isPulled: false
                 });
             }
 

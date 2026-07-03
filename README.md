@@ -1,6 +1,6 @@
 # MONOLITH 🏛️
 
-A professional, high-performance pseudo-3D dungeon crawler engine built with Vanilla JavaScript and HTML5 Canvas. Now featuring a signature **Raw Retro Vector** aesthetic.
+A professional, high-performance pseudo-3D dungeon crawler engine built with Vanilla JavaScript and HTML5 Canvas. Now featuring a **1990s Modern** textured aesthetic.
 
 <p align="center">
   <img src="./images/screenshot2.png" alt="Monolith Raw Retro Vector" width="800">
@@ -18,7 +18,7 @@ A professional, high-performance pseudo-3D dungeon crawler engine built with Van
 
 **Monolith** is a technical showcase of first-person dungeon crawler (DRPG) mechanics. It features a custom rendering pipeline that simulates a 3D perspective using perspective-correct transformations, billboarding, and distance-based atmospheric effects.
 
-The project has evolved into a fully **Vector-Based** experience, replacing legacy PNG textures with dynamic geometric wireframes for a sharp, minimalist retro aesthetic.
+The project has evolved into a **1990s Modern** experience, bringing back classic PNG textures for walls, floors, ceilings, items, and monsters for an immersive aesthetic.
 
 ### Key Features
 - **Raw Retro Vector Engine**: High-performance geometric rendering with sub-pixel precision.
@@ -100,7 +100,7 @@ Explore the depths of the Monolith, defeat monsters, and find your way to the de
 **3D Engine Technology**
 The engine is built using pure **Vanilla JavaScript** and the **HTML5 Canvas API**. It does not use external 3D libraries (like Three.js); instead, it implements perspective mathematically:
 - **Pseudo-3D Rendering**: Although the engine operates on a grid, it uses perspective-correct transformations and the "Painter's Algorithm" for depth management (drawing the furthest objects first).
-- **Vector-Based Rendering**: The engine projects 3D coordinates onto a 2D plane and draws walls as dynamic trapezoids. This enables a sharp and minimalist "Raw Retro" vector aesthetic without the need for raster textures.
+- **Texture Rendering**: The engine projects 3D coordinates onto a 2D plane and draws walls as dynamic trapezoids, supporting full raster textures for walls and billboards for entities to create a 1990s aesthetic.
 - **Performance**: Optimized for smooth browser performance, the engine utilizes efficient distance-based fog effects and visibility culling (only surfaces near the player are calculated).
 
 **Building Levels from ASCII Files**
@@ -117,8 +117,8 @@ The game reads level structures directly from ASCII text files (e.g., `Level.txt
 
 ---
 
-## 📅 Status (2026-05-12)
-The engine has transitioned to a "Raw Retro" state. All legacy raster textures have been removed in favor of a clean, high-fidelity vector look.
+## 📅 Status (2026-06-16)
+The engine has transitioned back to a "1990s Modern" state. Raster textures have been re-enabled for walls, floors, ceilings, and entities to create a rich graphical experience.
 
 ### Current Priorities:
 1. **Procedural Elements**: Adding map generation capabilities for infinite dungeons.

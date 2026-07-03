@@ -216,26 +216,29 @@ function createCeiling() {
 function createDoor() {
     const png = createBitmap(64, 64);
     const rnd = detRand(0x444f4f52);
-    const wood = hexRgb('#141210');
+    const wood = hexRgb('#5a3a1f');
     fillRect(png, 0, 0, 64, 64, wood[0], wood[1], wood[2]);
-    const plank = hexRgb('#0a0a0a');
+    const plank = hexRgb('#3a2010');
     for (let x = 0; x < 64; x += 16) {
         strokeRect(png, x, 0, 16, 64, plank[0], plank[1], plank[2]);
     }
-    const band = hexRgb('#1f1f1f');
+    const band = hexRgb('#888888');
     fillRect(png, 0, 11, 64, 9, band[0], band[1], band[2]);
     fillRect(png, 0, 43, 64, 9, band[0], band[1], band[2]);
-    const rivet = hexRgb('#3a3a3a');
+    const rivet = hexRgb('#dddddd');
     for (const y of [15, 47]) {
         for (const x of [8, 24, 40, 56]) {
             fillRect(png, x - 1, y - 1, 2, 2, rivet[0], rivet[1], rivet[2]);
         }
     }
-    for (let i = 0; i < 80; i++) {
+    const grain = hexRgb('#4a2e16');
+    for (let i = 0; i < 200; i++) {
         const gx = (rnd() * 64) | 0;
         const gy = (rnd() * 64) | 0;
-        const v = 0x12 + ((rnd() * 6) | 0);
-        setPixel(png, gx, gy, v, v, Math.max(0, v - 1));
+        // Don't draw grain on the iron bands
+        if ((gy < 11 || gy > 19) && (gy < 43 || gy > 51)) {
+            setPixel(png, gx, gy, grain[0], grain[1], grain[2]);
+        }
     }
     savePng(png, 'door');
 }

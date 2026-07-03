@@ -85,10 +85,18 @@ export class GameEngine {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
+        
+        // Sample top-left pixel as the background color
+        const bgR = data[0];
+        const bgG = data[1];
+        const bgB = data[2];
+        const tolerance = 20; // Allow slight JPEG compression noise
+        
         for (let i = 0; i < data.length; i += 4) {
-            // Pure black or near black becomes transparent
-            if (data[i] < 10 && data[i+1] < 10 && data[i+2] < 10) {
-                data[i+3] = 0;
+            if (Math.abs(data[i] - bgR) < tolerance && 
+                Math.abs(data[i+1] - bgG) < tolerance && 
+                Math.abs(data[i+2] - bgB) < tolerance) {
+                data[i+3] = 0; // Make transparent
             }
         }
         ctx.putImageData(imageData, 0, 0);
@@ -193,7 +201,7 @@ export class GameEngine {
         return true;
     }
 
-    interact() {
+    interact(playerState) {
         if (this.player.animProgress < 1) return null;
 
         const px = Math.floor(this.player.targetX);
@@ -218,6 +226,19 @@ export class GameEngine {
             this.map[ty][tx] = 'd'; // Open door (stays visible but walkable)
             return "You opened a door.";
         }
+        
+        // Locked Doors
+        if (this.map[ty] && this.map[ty][tx] === 'L') {
+            if (!playerState) return "The door is firmly locked. It needs a key.";
+            const keyIndex = playerState.inventory.findIndex(item => item.id === 'key');
+            if (keyIndex !== -1) {
+                playerState.inventory.splice(keyIndex, 1); // Consume key
+                this.map[ty][tx] = 'd'; // Open door
+                return "You unlock the door with the Iron Key.";
+            } else {
+                return "The door is firmly locked. It needs a key.";
+            }
+        }
 
         // Check for interactive decals on the wall face
         const lookDirs = ['S', 'W', 'N', 'E'];
@@ -231,7 +252,18 @@ export class GameEngine {
 
         if (decal) {
             if (decal.monsterType === 'lever') {
-                return "The lever is stuck... for now.";
+                decal.isPulled = !decal.isPulled;
+                if (decal.targetX !== undefined && decal.targetY !== undefined) {
+                    const targetCell = this.map[decal.targetY][decal.targetX];
+                    if (targetCell === '#') {
+                        this.map[decal.targetY][decal.targetX] = '.'; // Reveal hidden passage
+                        return "You pull the lever. A hidden passage opens!";
+                    } else if (targetCell === 'D' || targetCell === 'L') {
+                        this.map[decal.targetY][decal.targetX] = 'd'; // Open door remotely
+                        return "You pull the lever. You hear a door open in the distance.";
+                    }
+                }
+                return "The lever clunks loudly, but nothing seems to happen.";
             }
             return `You examine the ${decal.monsterType.toUpperCase()}.`;
         }
@@ -423,7 +455,7 @@ export class GameEngine {
                 const gx = Math.floor(x + dx);
                 const gy = Math.floor(y + dy);
                 const cell = this.map[gy] ? this.map[gy][gx] : null;
-                const isSolid = cell === '#' || cell === 'D' || cell === 'd';
+                const isSolid = cell === '#' || cell === 'D' || cell === 'd' || cell === 'L';
 
                 if (isSolid) {
                     const sides = [
@@ -439,14 +471,15 @@ export class GameEngine {
 
                         const isVisible = (cell === '#' && isWalkableNeighbor) ||
                             (cell === 'D' && isWalkableNeighbor) ||
+                            (cell === 'L' && isWalkableNeighbor) ||
                             (cell === 'd' && isWalkableNeighbor);
 
                         if (!isVisible) continue;
 
                         const fd = this.getFace(gx, gy, s.face, x, y, cosA, sinA);
                         if (fd) {
-                            fd.cell = cell; // Store the cell type (#, D, or d)
-                            fd.isDoor = (cell === 'D' || cell === 'd');
+                            fd.cell = cell; // Store the cell type (#, D, L, or d)
+                            fd.isDoor = (cell === 'D' || cell === 'd' || cell === 'L');
                             faces.push(fd);
                         }
                     }
@@ -545,37 +578,39 @@ export class GameEngine {
                 const typeKey = ent.monsterType.toUpperCase();
                 const hasVector = !!VectorSprites[typeKey];
 
-                if (hasVector) {
+                if (def.sprite) {
+                    if (s1.sx > s2.sx) {
+                        faces.push({
+                            type: 'wall-decal',
+                            sprite: def.sprite,
+                            x1: s2.sx, yT1: s2.yT, yB1: s2.yB,
+                            x2: s1.sx, yT2: s1.yT, yB2: s1.yB,
+                            dist: ((c1.rz + c2.rz) / 2) - 0.001,
+                            u1: u2, u2: u1,
+                            z1: c2.rz, z2: c1.rz,
+                            vScale: def.scale || 1.0,
+                            vOffset: def.yOffset || 0.0
+                        });
+                    } else {
+                        faces.push({
+                            type: 'wall-decal',
+                            sprite: def.sprite,
+                            x1: s1.sx, yT1: s1.yT, yB1: s1.yB,
+                            x2: s2.sx, yT2: s2.yT, yB2: s2.yB,
+                            dist: ((c1.rz + c2.rz) / 2) - 0.001, // Prevent Z-fighting with wall
+                            u1: u1, u2: u2,
+                            z1: c1.rz, z2: c2.rz,
+                            vScale: def.scale || 1.0,
+                            vOffset: def.yOffset || 0.0
+                        });
+                    }
+                } else if (hasVector) {
                     faces.push({
                         type: 'vector-wall-decal',
                         monsterType: typeKey,
                         x1: s1.sx, yT1: s1.yT, yB1: s1.yB,
                         x2: s2.sx, yT2: s2.yT, yB2: s2.yB,
                         dist: ((c1.rz + c2.rz) / 2) - 0.001,
-                        z1: c1.rz, z2: c2.rz,
-                        vScale: def.scale || 1.0,
-                        vOffset: def.yOffset || 0.0
-                    });
-                } else if (s1.sx > s2.sx) {
-                    faces.push({
-                        type: 'wall-decal',
-                        sprite: def.sprite,
-                        x1: s2.sx, yT1: s2.yT, yB1: s2.yB,
-                        x2: s1.sx, yT2: s1.yT, yB2: s1.yB,
-                        dist: ((c1.rz + c2.rz) / 2) - 0.001,
-                        u1: u2, u2: u1,
-                        z1: c2.rz, z2: c1.rz,
-                        vScale: def.scale || 1.0,
-                        vOffset: def.yOffset || 0.0
-                    });
-                } else {
-                    faces.push({
-                        type: 'wall-decal',
-                        sprite: def.sprite,
-                        x1: s1.sx, yT1: s1.yT, yB1: s1.yB,
-                        x2: s2.sx, yT2: s2.yT, yB2: s2.yB,
-                        dist: ((c1.rz + c2.rz) / 2) - 0.001, // Prevent Z-fighting with wall
-                        u1: u1, u2: u2,
                         z1: c1.rz, z2: c2.rz,
                         vScale: def.scale || 1.0,
                         vOffset: def.yOffset || 0.0
@@ -604,31 +639,7 @@ export class GameEngine {
             const NEAR = 0.1;
             const distWithLunge = Math.max(NEAR, rz - (lunge * 0.01));
 
-            if (hasVector) {
-                // Billboard Vector Sprite
-                const rx = -dx * sinA + dy * cosA;
-                const f = this.focalLength / distWithLunge;
-                const sx = rx * f + (this.canvas.width / 2);
-                
-                let sy = (this.canvas.height / 2) + bobOffset;
-                const scale = def.scale || 1;
-                const yOffset = def.yOffset || 0;
-                
-                if (def.onFloor) {
-                    sy += f * (0.5 - scale / 2 + yOffset);
-                } else {
-                    sy += ((def.anchorY ?? 0) + yOffset) * f;
-                }
-                const size = f * scale;
-
-                faces.push({
-                    type: 'vector-sprite',
-                    monsterType: typeKey,
-                    sx, sy, size,
-                    dist: distWithLunge,
-                    hitTimer: ent.hitTimer || 0
-                });
-            } else if (def.sprite) {
+            if (def.sprite) {
                 // Billboard Sprite Rendering (Legacy PNG)
                 const rx = -dx * sinA + dy * cosA;
                 const f = this.focalLength / distWithLunge;
@@ -652,6 +663,30 @@ export class GameEngine {
                     sprite: def.sprite,
                     sx, sy, size,
                     dist: rz - (lunge * 0.01),
+                    hitTimer: ent.hitTimer || 0
+                });
+            } else if (hasVector) {
+                // Billboard Vector Sprite
+                const rx = -dx * sinA + dy * cosA;
+                const f = this.focalLength / distWithLunge;
+                const sx = rx * f + (this.canvas.width / 2);
+                
+                let sy = (this.canvas.height / 2) + bobOffset;
+                const scale = def.scale || 1;
+                const yOffset = def.yOffset || 0;
+                
+                if (def.onFloor) {
+                    sy += f * (0.5 - scale / 2 + yOffset);
+                } else {
+                    sy += ((def.anchorY ?? 0) + yOffset) * f;
+                }
+                const size = f * scale;
+
+                faces.push({
+                    type: 'vector-sprite',
+                    monsterType: typeKey,
+                    sx, sy, size,
+                    dist: distWithLunge,
                     hitTimer: ent.hitTimer || 0
                 });
             }
@@ -852,9 +887,9 @@ export class GameEngine {
 
 
                 // --- TEXTURE RENDERING (The Retro Way) ---
-                // Texture walls (#) and all door types (D, d)
+                // Texture walls (#) and all door types (D, L, d)
                 const isWall = f.cell === '#';
-                const isDoor = f.cell === 'D' || f.cell === 'd';
+                const isDoor = f.cell === 'D' || f.cell === 'd' || f.cell === 'L';
                 
                 const activeTex = isDoor ? (this.theme.doorTextureImg || this.theme.wallTextureImg) : (isWall ? this.theme.wallTextureImg : null);
                 

@@ -10,8 +10,11 @@ const THEMES = {
             fogDist: 12,
             waistLine: 0.7,
             showWaistLine: true,
-            // Textures disabled for raw retro look
-
+            // Re-enabled textures for modern retro look
+            wallTexture: 'assets/textures/themes/classic/wall.png',
+            floorTexture: 'assets/textures/themes/classic/floor.png',
+            ceilingTexture: 'assets/textures/themes/classic/ceiling.png',
+            doorTexture: 'assets/textures/themes/classic/door.png'
         },
         spawn: {
             monsterCount: 6,

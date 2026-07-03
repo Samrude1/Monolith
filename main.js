@@ -303,7 +303,8 @@ async function handleInteract() {
     if (storySystem.isOpen) return;
     startSounds();
 
-    const msg = engine.interact();
+    const msg = engine.interact(playerState);
+    updateInventoryUI(); // Update UI in case an item (like a key) was consumed
     if (msg === "STAIRS_UP") {
         if (playerState.currentFloor > 1) {
             const prevFloor = playerState.currentFloor - 1;
@@ -506,7 +507,15 @@ function updateInventoryUI() {
             const typeKey = item.id.toUpperCase();
             const drawFunc = VectorSprites[typeKey];
 
-            if (drawFunc) {
+            if (item.sprite && item.sprite instanceof HTMLCanvasElement) {
+                const img = document.createElement('img');
+                img.src = item.sprite.toDataURL();
+                slot.appendChild(img);
+            } else if (item.spriteFile) {
+                const img = document.createElement('img');
+                img.src = item.spriteFile + '?v=' + Date.now();
+                slot.appendChild(img);
+            } else if (drawFunc) {
                 // Render Vector Sprite onto a small canvas for the inventory slot
                 const canvas = document.createElement('canvas');
                 canvas.width = 64;
@@ -519,10 +528,6 @@ function updateInventoryUI() {
                 drawFunc(ctx, 40); // Size 40 for the slot
                 
                 slot.appendChild(canvas);
-            } else if (item.spriteFile) {
-                const img = document.createElement('img');
-                img.src = item.spriteFile;
-                slot.appendChild(img);
             } else {
                 slot.innerText = item.name[0];
             }
@@ -673,8 +678,9 @@ document.getElementById('btn-restart').onclick = () => location.reload();
 async function start() {
     const loadImage = (url) => new Promise(resolve => {
         const img = new Image();
-        img.onload  = () => resolve(img);
-        img.onerror = () => resolve(null);
+        img.crossOrigin = "anonymous";
+        img.onload  = () => { console.log('Loaded:', url); resolve(img); };
+        img.onerror = () => { console.error('Failed to load image:', url); resolve(null); };
         img.src = url;
     });
 
@@ -686,8 +692,12 @@ async function start() {
             def.vector = await loadMonsterFromFile(def.file);
         } catch (e) {}
         if (def.spriteFile) {
-            const rawImg = await loadImage(def.spriteFile);
-            def.sprite = engine.removeBlackBackground(rawImg);
+            const rawImg = await loadImage(def.spriteFile + '?v=' + Date.now());
+            if (rawImg) {
+                def.sprite = engine.removeBlackBackground(rawImg);
+            } else {
+                console.warn('Failed to load sprite for ' + key);
+            }
         }
     }
 
