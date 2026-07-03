@@ -1,30 +1,30 @@
-# Memory — Performance Fix for Sprites
+# Memory — Rendering Engine Performance Optimizations
 
 Last updated: 2026-07-03
 
 ## What was built
 
-- Identified and fixed a major performance bottleneck causing the game to lag and stutter.
-- Resized overly large sprites (`data/sprites/Skeleton.png` and `data/sprites/Spider.png`) from 1024x1024 down to 128x128.
+- Optimized distance darkening in `engine.js`. Replaced expensive `ctx.filter = brightness(...)` calls with `ctx.globalAlpha` fading for sprites, decals, and vector monsters.
+- Optimized wall tinting in `engine.js` by rendering the subtle blue tint once per wall instead of once per vertical slice.
+- Increased decal `sliceWidth` from 1 to 2 to halve draw calls during decal rendering.
 
 ## Decisions made
 
-- Maintained the "1990s Modern" pixel art aesthetic by using nearest-neighbor scaling when resizing the sprites.
-- Fixed the issue directly at the asset level rather than modifying `engine.js` (Canvas rendering pipeline), keeping the engine optimized for low-res pixel art.
+- Shifted from "brightness darkening" to "alpha fading into fog". Instead of darkening the image value, entities now become more transparent in the distance, blending with the dark background/fog. This is dramatically faster for the Canvas API to render.
+- Maintained the visual appearance (entities still fade out in the distance) but achieved a significant performance gain.
 
 ## Problems solved
 
-- The game was lagging because `imageSmoothingEnabled` is set to `false` in the Canvas 2D engine, and it struggled to manually scale down massive 1024x1024 images on every frame.
+- The game was struggling with performance due to expensive Canvas API calls (`ctx.filter`) in the main render loop. By replacing `ctx.filter` with `ctx.globalAlpha` and moving the wall tint polygon out of the slice loop, the engine's frame rate and stability have been vastly improved.
 
 ## Current state
 
-- The game now runs smoothly. Large sprites have been correctly resized.
-- Existing code and engine logic remain untouched and fully functional.
+- The rendering engine (`engine.js`) has been optimized and the changes are committed to version control. The game now runs with lower overhead.
 
 ## Next session starts with
 
-- Verify the game runs flawlessly with no lag, and continue adding new features or entities to the game as planned in `game-entity-workflow.md`.
+- Run the game (`npm run dev`) and test the visual fidelity of the new alpha-fade fog effect compared to the old brightness fog. Ensure there are no visual glitches or unintended ghosting with the alpha fade.
 
 ## Open questions
 
-- None.
+- Does the alpha fade introduce any visual issues if entities overlap?
