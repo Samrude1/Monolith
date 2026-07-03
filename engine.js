@@ -5,6 +5,10 @@ const Entities = EntityDefs;
 import { STORY_DATA } from './data/story.js';
 import { VectorSprites } from './systems/vectorSprites.js';
 
+const spriteDarkenCanvas = document.createElement('canvas');
+const spriteDarkenCtx = spriteDarkenCanvas.getContext('2d');
+spriteDarkenCtx.imageSmoothingEnabled = false;
+
 export class GameEngine {
     constructor(canvas, ui) {
         this.canvas = canvas;
@@ -697,21 +701,28 @@ export class GameEngine {
                 const h = f.size;
                 const w = h * aspect;
                 
-                // Distance darkening: fade out into the fog
-                const distBrightness = Math.max(0.0, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                // Distance darkening via offscreen canvas
+                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
                 
-                // FLASH EFFECT (White hit flash overrides darkening)
+                spriteDarkenCanvas.width = img.width;
+                spriteDarkenCanvas.height = img.height;
+                spriteDarkenCtx.globalCompositeOperation = 'source-over';
+                spriteDarkenCtx.drawImage(img, 0, 0);
+                
+                // FLASH EFFECT OR DARKENING
                 if (f.hitTimer > 0) {
-                    ctx.globalAlpha = 1.0;
-                    ctx.filter = 'brightness(10)';
-                } else {
-                    ctx.globalAlpha = distBrightness;
-                    ctx.filter = 'none';
+                    spriteDarkenCtx.globalCompositeOperation = 'source-atop';
+                    spriteDarkenCtx.fillStyle = 'rgba(255,255,255,1)';
+                    spriteDarkenCtx.fillRect(0, 0, img.width, img.height);
+                } else if (distBrightness < 0.99) {
+                    spriteDarkenCtx.globalCompositeOperation = 'source-atop';
+                    spriteDarkenCtx.fillStyle = `rgba(0,0,0,${1 - distBrightness})`;
+                    spriteDarkenCtx.fillRect(0, 0, img.width, img.height);
                 }
 
+                ctx.globalAlpha = 1.0;
                 // Draw image
-                ctx.drawImage(img, f.sx - w / 2, f.sy - h / 2, w, h);
-                ctx.filter = 'none'; // Reset for next objects
+                ctx.drawImage(spriteDarkenCanvas, f.sx - w / 2, f.sy - h / 2, w, h);
 
                 ctx.restore();
             } else if (f.type === 'wall-decal') {
@@ -724,10 +735,22 @@ export class GameEngine {
                 ctx.save();
                 ctx.globalCompositeOperation = 'source-over';
                 
-                // Distance darkening: fade out into the fog (blends with the dark wall behind it)
-                const distBrightness = Math.max(0.0, 1 - ((f.dist * 1.3) / this.theme.fogDist));
-                ctx.globalAlpha = distBrightness;
-
+                // Distance darkening: pre-darken the decal using offscreen canvas
+                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                let sourceImg = img;
+                
+                if (distBrightness < 0.99) {
+                    spriteDarkenCanvas.width = img.width;
+                    spriteDarkenCanvas.height = img.height;
+                    spriteDarkenCtx.globalCompositeOperation = 'source-over';
+                    spriteDarkenCtx.drawImage(img, 0, 0);
+                    spriteDarkenCtx.globalCompositeOperation = 'source-atop';
+                    spriteDarkenCtx.fillStyle = `rgba(0,0,0,${1 - distBrightness})`;
+                    spriteDarkenCtx.fillRect(0, 0, img.width, img.height);
+                    sourceImg = spriteDarkenCanvas;
+                }
+                
+                ctx.globalAlpha = 1.0;
                 const sliceWidth = 2; // Increased slice width to 2 to halve draw calls
                 for (let sx = 0; sx < screenWidth; sx += sliceWidth) {
                     const t = sx / screenWidth;
@@ -746,12 +769,11 @@ export class GameEngine {
                     const clampedSx = Math.max(0, Math.min(img.width - 1, sourceX));
                     
                     ctx.drawImage(
-                        img,
+                        sourceImg,
                         clampedSx, 0, 1, img.height,
-                        f.x1 + sx, dy, 1.5, dh + 1
+                        f.x1 + sx, dy, sliceWidth + 0.5, dh + 1
                     );
                 }
-                ctx.filter = 'none';
                 ctx.restore();
             } else if (f.type === 'vector-wall-decal') {
                 const drawFunc = VectorSprites[f.monsterType];
@@ -823,12 +845,11 @@ export class GameEngine {
             } else if (f.type === 'vector-sprite') {
                 // Draw Geometric Vector Monster
                 const s = f.size;
-                // Distance darkening via color value — fade out in distance
-                const distBrightness = Math.max(0.0, 1 - ((f.dist * 1.3) / this.theme.fogDist));
+                // Distance darkening via color value — full white up close, dim far away
+                const distBrightness = Math.max(0.10, 1 - ((f.dist * 1.3) / this.theme.fogDist));
                 const colorVal = Math.floor(255 * distBrightness);
-                // Vector sprites fade via alpha now too
+                // Vector sprites always at full brightness — no fog dimming
                 ctx.save();
-                ctx.globalAlpha = distBrightness;
                 ctx.translate(f.sx, f.sy);
 
                 // FLASH EFFECT
@@ -958,17 +979,12 @@ export class GameEngine {
                             ctx.stroke();
                         }
 
-                        // HIGH-FIDELITY MULTI-STOP FOG
+                        // HIGH-FIDELITY MULTI-STOP FOG (Optimized to 2 stops)
                         const grad = ctx.createLinearGradient(xL_int, 0, xR_int + 2, 0);
-                        const stopStep = 16; 
-                        const stopCount = Math.max(2, (screenWidth / stopStep) | 0);
-                        for (let i = 0; i <= stopCount; i++) {
-                            const t = i / stopCount;
-                            const z_inv = (1 / zL) * (1 - t) + (1 / zR) * t;
-                            const actualZ = 1 / z_inv;
-                            const sliceFog = Math.max(0, 1 - ((actualZ * 1.4) / this.theme.fogDist));
-                            grad.addColorStop(t, `rgba(0,0,0,${1 - sliceFog})`);
-                        }
+                        const fog1 = Math.max(0, 1 - ((zL * 1.4) / this.theme.fogDist));
+                        const fog2 = Math.max(0, 1 - ((zR * 1.4) / this.theme.fogDist));
+                        grad.addColorStop(0, `rgba(0,0,0,${1 - fog1})`);
+                        grad.addColorStop(1, `rgba(0,0,0,${1 - fog2})`);
                         ctx.fillStyle = grad;
                         ctx.beginPath();
                         ctx.moveTo(xL_int, yTL); ctx.lineTo(xR_int + 2, yTR);
@@ -1177,9 +1193,14 @@ export class GameEngine {
             const fogVal = Math.floor(255 * (1 - fog));
 
             const texScale = this.theme.textureScale || 1.0;
+            const wMult = texScale * tw;
+            const hMult = texScale * th;
+            
             for (let x = 0; x < bufW; x++) {
-                const tx = (((worldX * texScale) * tw) % tw + tw) % tw | 0;
-                const ty = (((worldY * texScale) * th) % th + th) % th | 0;
+                let tx = Math.floor(worldX * wMult) % tw;
+                if (tx < 0) tx += tw;
+                let ty = Math.floor(worldY * hMult) % th;
+                if (ty < 0) ty += th;
                 
                 let c = tp[ty * tw + tx];
                 

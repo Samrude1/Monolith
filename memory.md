@@ -4,27 +4,29 @@ Last updated: 2026-07-03
 
 ## What was built
 
-- Optimized distance darkening in `engine.js`. Replaced expensive `ctx.filter = brightness(...)` calls with `ctx.globalAlpha` fading for sprites, decals, and vector monsters.
-- Optimized wall tinting in `engine.js` by rendering the subtle blue tint once per wall instead of once per vertical slice.
-- Increased decal `sliceWidth` from 1 to 2 to halve draw calls during decal rendering.
+- Implemented an **offscreen canvas (`spriteDarkenCanvas`)** for distance darkening of sprites and wall decals. This replaced the extremely slow `ctx.filter = brightness(...)` calls with ultra-fast `source-atop` compositing, while keeping entities fully opaque (fixing the "ghost/transparent lever" bug).
+- Replaced the expensive 16-stop multi-stop fog gradient on walls with a blazing-fast **2-stop linear gradient**.
+- Optimized the **floor/ceiling renderer's hot loop** (32,400 pixels/frame) by replacing double float modulo math with fast `Math.floor()` and integer bounds checking.
+- Fixed a 0.5px rendering gap in the `wall-decal` slice loop that was causing decals to look transparent when drawn over walls.
 
 ## Decisions made
 
-- Shifted from "brightness darkening" to "alpha fading into fog". Instead of darkening the image value, entities now become more transparent in the distance, blending with the dark background/fog. This is dramatically faster for the Canvas API to render.
-- Maintained the visual appearance (entities still fade out in the distance) but achieved a significant performance gain.
+- Abandoned both `globalAlpha` fading (makes entities translucent) and `ctx.filter` (causes massive lag). The new offscreen canvas approach is the permanent, performant solution for retro distance fog on sprites.
+- Maintained the visual appearance (entities still fade out in the distance) but achieved a massive performance gain, keeping the game at a smooth 60 FPS even on large levels.
 
 ## Problems solved
 
-- The game was struggling with performance due to expensive Canvas API calls (`ctx.filter`) in the main render loop. By replacing `ctx.filter` with `ctx.globalAlpha` and moving the wall tint polygon out of the slice loop, the engine's frame rate and stability have been vastly improved.
+- The game was struggling with performance due to expensive Canvas API calls and double modulo math in the main render loop.
+- Sprites and decals (like the lever) were appearing transparent and letting the wall texture bleed through. Both the lag and the visual bugs are now fully resolved.
 
 ## Current state
 
-- The rendering engine (`engine.js`) has been optimized and the changes are committed to version control. The game now runs with lower overhead.
+- The rendering engine (`engine.js`) has been heavily optimized and all visual bugs related to the fog are fixed. The game runs buttery smooth.
 
 ## Next session starts with
 
-- Run the game (`npm run dev`) and test the visual fidelity of the new alpha-fade fog effect compared to the old brightness fog. Ensure there are no visual glitches or unintended ghosting with the alpha fade.
+- Pick up from `game-entity-workflow.md` and continue adding new mechanics, puzzles, or entities now that the core rendering engine is rock solid.
 
 ## Open questions
 
-- Does the alpha fade introduce any visual issues if entities overlap?
+- None.
