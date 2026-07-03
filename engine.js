@@ -151,8 +151,8 @@ export class GameEngine {
 
         if (isMonsterBlocking) return 'MONSTER';
 
-        // Allow walking through floor tiles (.) open doors (d) and stairs (<, >)
-        if (targetCell === '.' || targetCell === 'd' || targetCell === '<' || targetCell === '>') {
+        // Allow walking through floor tiles (.) open doors (d) and stairs (<, >) and spawn point (S)
+        if (targetCell === '.' || targetCell === 'd' || targetCell === '<' || targetCell === '>' || targetCell === 'S') {
             this.player.startX = this.player.targetX;
             this.player.startY = this.player.targetY;
             this.player.startDir = this.player.targetDir;
@@ -467,7 +467,7 @@ export class GameEngine {
                     for (const s of sides) {
                         const neighbor = this.map[s.ny] ? this.map[s.ny][s.nx] : null;
                         // A face is visible if it separates a solid cell from a walkable one
-                        const isWalkableNeighbor = neighbor === '.' || neighbor === 'd' || neighbor === '<' || neighbor === '>';
+                        const isWalkableNeighbor = neighbor === '.' || neighbor === 'S' || neighbor === 'd' || neighbor === '<' || neighbor === '>';
 
                         const isVisible = (cell === '#' && isWalkableNeighbor) ||
                             (cell === 'D' && isWalkableNeighbor) ||
@@ -927,11 +927,23 @@ export class GameEngine {
                             const sourceX = (u * img.width) | 0;
                             const clampedSx = Math.max(0, Math.min(img.width - 1, sourceX));
                             
+                            // Draw wall texture behind the door if it's a door and has a distinct texture
+                            if (f.isDoor && this.theme.wallTextureImg && img !== this.theme.wallTextureImg) {
+                                const wallSourceX = (u * this.theme.wallTextureImg.width) | 0;
+                                const clampedWallSx = Math.max(0, Math.min(this.theme.wallTextureImg.width - 1, wallSourceX));
+                                ctx.drawImage(
+                                    this.theme.wallTextureImg,
+                                    clampedWallSx, 0, 1, this.theme.wallTextureImg.height,
+                                    xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1
+                                );
+                            }
+
                             ctx.drawImage(
                                 img,
                                 clampedSx, 0, 1, img.height,
                                 xL_int + sx, topY, sliceWidth + 0.5, (bottomY - topY) + 1
                             );
+
                             
                             // SUBTLE TINT FOR WALLS
                             ctx.fillStyle = 'rgba(0, 50, 150, 0.05)';

@@ -11,7 +11,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/key.png',
         file: './data/objects/Key.txt',
         sprite: null, vector: [],
-        scale: 0.4, onFloor: true, yOffset: 0.2
+        scale: 0.2, onFloor: true
     },
     'food': {
         id: 'food',
@@ -22,7 +22,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/apple.png',
         file: './data/objects/Food.txt',
         sprite: null, vector: [],
-        scale: 0.6, onFloor: true, yOffset: 0.25
+        scale: 0.18, onFloor: true
     },
     'sword': {
         id: 'sword',
@@ -34,7 +34,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/sword.png',
         file: './data/objects/Sword.txt',
         sprite: null, vector: [],
-        scale: 0.6, onFloor: true, yOffset: 0.2
+        scale: 0.5, onFloor: true
     },
     'dagger': {
         id: 'dagger',
@@ -46,7 +46,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/dagger.png',
         file: './data/objects/Dagger.txt',
         sprite: null, vector: [],
-        scale: 0.5, onFloor: true, yOffset: 0.2
+        scale: 0.3, onFloor: true
     },
     'mace': {
         id: 'mace',
@@ -58,7 +58,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/mace.png',
         file: './data/objects/Mace.txt',
         sprite: null, vector: [],
-        scale: 0.7, onFloor: true, yOffset: 0.2
+        scale: 0.5, onFloor: true
     },
     'leather_armor': {
         id: 'leather_armor',
@@ -69,7 +69,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/armor.png',
         file: './data/objects/Armor.txt',
         sprite: null, vector: [],
-        scale: 0.7, onFloor: true, yOffset: 0.2
+        scale: 0.6, onFloor: true
     },
     'health_potion': {
         id: 'health_potion',
@@ -80,7 +80,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/potion.png',
         file: './data/objects/Potion.txt',
         sprite: null, vector: [],
-        scale: 0.2, onFloor: true, yOffset: 0.2
+        scale: 0.27, onFloor: true
     },
     'door': {
         id: 'door',
@@ -98,7 +98,7 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/gold.png',
         file: './data/objects/Gold.txt',
         sprite: null, vector: [],
-        scale: 0.4, onFloor: true, yOffset: 0.2
+        scale: 0.2, onFloor: true
     },
     'chest': {
         id: 'chest',
@@ -109,19 +109,19 @@ export const ItemDefs = {
         spriteFile: 'assets/textures/entities/chest.png',
         file: './data/objects/Chest.txt',
         sprite: null, vector: [],
-        scale: 0.8, onFloor: true, yOffset: 0.15
+        scale: 0.6, onFloor: true
     },
     'stairs_up': {
         id: 'stairs_up',
         name: '^ STAIRS UP ^',
         type: 'object',
-        sprite: null, vector: [] // Engine will fallback to vector box named 'stairs_up'
+        spriteFile: 'assets/textures/entities/stairs_up.png'
     },
     'stairs_down': {
         id: 'stairs_down',
         name: 'v STAIRS DOWN v',
         type: 'object',
-        sprite: null, vector: []
+        spriteFile: 'assets/textures/entities/stairs_down.png'
     },
     'lever': {
         id: 'lever',
@@ -129,8 +129,8 @@ export const ItemDefs = {
         type: 'interactive',
         description: 'A heavy iron lever. It seems to be connected to something.',
         width: 0.5,
-        scale: 0.6,
-        yOffset: 0.1, // Aligned towards waistline
+        scale: 0.3,
+        yOffset: 0.0, // Aligned towards waistline
         spriteFile: 'assets/textures/entities/lever.png',
         sprite: null
     }

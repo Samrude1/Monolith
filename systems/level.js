@@ -78,10 +78,16 @@ export class LevelManager {
                     const char = this.map[y][x];
                     if (char === '.') {
                         emptyTiles.push({ x, y });
-                    } else if (char === '<') {
-                        floorEntities.push({ type: 'object', monsterType: 'stairs_up', x: x + 0.5, y: y + 0.5 });
-                    } else if (char === '>') {
-                        floorEntities.push({ type: 'object', monsterType: 'stairs_down', x: x + 0.5, y: y + 0.5 });
+                    } else if (char === '<' || char === '>') {
+                        let decalX = x, decalY = y, facing = 'S';
+                        if (this.map[y-1] && this.map[y-1][x] === '#') { decalX = x; decalY = y-1; facing = 'S'; }
+                        else if (this.map[y+1] && this.map[y+1][x] === '#') { decalX = x; decalY = y+1; facing = 'N'; }
+                        else if (this.map[y][x-1] === '#') { decalX = x-1; decalY = y; facing = 'E'; }
+                        else if (this.map[y][x+1] === '#') { decalX = x+1; decalY = y; facing = 'W'; }
+
+                        const type = char === '<' ? 'stairs_up' : 'stairs_down';
+                        floorEntities.push({ type: 'decal', monsterType: type, x: decalX, y: decalY, facing: facing });
+                        
                     } else if (char === 'D') {
                         // Door entities are now handled by the engine's wall rendering system
                     }
@@ -177,15 +183,14 @@ export class LevelManager {
      */
     setPlayerPosition(entryChar) {
         if (!this.map) return;
+        let found = false;
         for (let y = 0; y < this.map.length; y++) {
             for (let x = 0; x < this.map[y].length; x++) {
-                if (this.map[y][x] === entryChar) {
+                if (!found && this.map[y][x] === entryChar) {
                     this.engine.player.startX = this.engine.player.targetX = x + 0.5;
                     this.engine.player.startY = this.engine.player.targetY = y + 0.5;
                     this.engine.player.startDir = this.engine.player.targetDir = 1; 
-                    
-                    if (entryChar === 'S') this.map[y][x] = '.';
-                    return;
+                    found = true;
                 }
             }
         }

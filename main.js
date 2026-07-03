@@ -694,7 +694,7 @@ async function start() {
         if (def.spriteFile) {
             const rawImg = await loadImage(def.spriteFile + '?v=' + Date.now());
             if (rawImg) {
-                def.sprite = engine.removeBlackBackground(rawImg);
+                def.sprite = rawImg;
             } else {
                 console.warn('Failed to load sprite for ' + key);
             }
