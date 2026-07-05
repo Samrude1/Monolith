@@ -106,7 +106,7 @@ body {
 .overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: #000000;
+    background: rgba(0, 0, 0, 0.9);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -114,11 +114,20 @@ body {
     z-index: 500;
 }
 
+#main-menu {
+    background-image: url('images/menu_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 .menu-content {
     text-align: center;
-    border: 3px double var(--panel-border);
+    border: 4px double var(--panel-border);
     padding: 60px;
-    background: #080808;
+    background: rgba(8, 8, 8, 0.85);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
     min-width: 480px;
 }
 
@@ -127,10 +136,14 @@ body {
    ============================================================ */
 
 .rpg-title {
-    font-size: 46px;
+    font-size: 52px;
     letter-spacing: 4px;
     margin-bottom: 50px;
-    color: var(--panel-border-lit);
+    color: var(--color-text-bright);
+    text-shadow: 4px 4px 0px #000000, 
+                 8px 8px 0px rgba(0,0,0,0.5), 
+                 0px 0px 20px rgba(218, 165, 32, 0.6);
+    transform: perspective(500px) rotateX(10deg);
 }
 
 /* ============================================================
@@ -327,28 +340,49 @@ body {
 .rpg-btn {
     background: var(--btn-action-bg);
     color: var(--btn-action-text);
-    border: 2px solid var(--btn-action-border);
+    border: 4px solid var(--btn-action-border);
+    border-top-color: #3cbd3c;
+    border-left-color: #3cbd3c;
+    border-bottom-color: #0b260b;
+    border-right-color: #0b260b;
+    box-shadow: 4px 4px 0px #000;
+    text-shadow: 2px 2px 0px #000;
     font-family: var(--font-main);
     font-size: 13px;
     padding: 11px 14px;
     cursor: pointer;
-    transition: background-color 0.1s, border-color 0.1s;
+    transition: transform 0.05s, box-shadow 0.05s;
+    text-transform: uppercase;
 }
 
 .rpg-btn:hover {
     background: var(--btn-action-hover);
-    border-color: var(--btn-action-text);
-    color: #88ff88;
+    color: #aaffaa;
+    border-top-color: #55dd55;
+    border-left-color: #55dd55;
+    border-bottom-color: #113311;
+    border-right-color: #113311;
 }
 
 .rpg-btn:active {
-    transform: scale(0.95);
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0px #000;
+    border-top-color: #0b260b;
+    border-left-color: #0b260b;
+    border-bottom-color: #3cbd3c;
+    border-right-color: #3cbd3c;
 }
 
 .rpg-btn.large {
     font-size: 22px;
-    padding: 18px 50px;
-    letter-spacing: 2px;
+    padding: 20px 60px;
+    letter-spacing: 3px;
+    border-width: 6px;
+    box-shadow: 6px 6px 0px #000;
+}
+.rpg-btn.large:active {
+    transform: translate(6px, 6px);
+    box-shadow: 0px 0px 0px #000;
 }
 
 /* ============================================================

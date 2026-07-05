@@ -5,7 +5,9 @@ import { loadMonsterFromFile } from './systems/monsterLoader.js';
 import { sounds } from './systems/sound.js';
 import { StorySystem } from './systems/story.js';
 import { VectorSprites } from './systems/vectorSprites.js';
-
+import { playerState } from './systems/playerState.js';
+import { UIManager } from './systems/uiManager.js';
+import { CombatSystem } from './systems/combat.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ui = {
@@ -17,27 +19,27 @@ const ui = {
 const engine = new GameEngine(canvas, ui);
 const levelManager = new LevelManager(engine);
 const storySystem = new StorySystem(engine);
+const uiManager = new UIManager(playerState, engine, sounds);
+const combatSystem = new CombatSystem(playerState, engine, uiManager, sounds);
 
+function addLog(msg) { uiManager.addLog(msg); }
+function updateStatsUI() { uiManager.updateStatsUI(); }
+function toggleInventory(show) { uiManager.toggleInventory(show, storySystem.isOpen); }
+function updateInventoryUI() { uiManager.updateInventoryUI((item) => handleDropItem(item)); }
 
-function addLog(msg) {
-    const div = document.createElement('div');
-    // Auto-classify message type by keyword for color coding
-    const lower = msg.toLowerCase();
-    let cls = 'message';
-    if (lower.includes('hits you') || lower.includes('perished') || lower.includes('broken') || lower.includes('dmg!') && lower.includes('you')) {
-        cls += ' message-damage';
-    } else if (lower.includes('you hit') || lower.includes('critical hit') || lower.includes('obliterate') || lower.includes('counter-attack')) {
-        cls += ' message-combat';
-    } else if (lower.includes('gold') || lower.includes('picked up') || lower.includes('dropped') || lower.includes('found') || lower.includes('loot')) {
-        cls += ' message-loot';
-    } else if (lower.includes('level up') || lower.includes('perfect parry') || lower.includes('parry') || lower.includes('block')) {
-        cls += ' message-warning';
-    } else if (lower.includes('bump') || lower.includes('empty') || lower.includes('nothing') || lower.includes('blocked')) {
-        cls += ' message-system';
-    }
-    div.className = cls;
-    div.innerText = `> ${msg}`;
-    ui.log.prepend(div);
+function handleDropItem(item) {
+    addLog(`Dropped ${item.name}`);
+    if (playerState.equippedWeapon === item) playerState.equippedWeapon = null;
+    if (playerState.equippedArmor === item) playerState.equippedArmor = null;
+    engine.entities.push({
+        type: 'object',
+        monsterType: item.id,
+        x: engine.player.targetX,
+        y: engine.player.targetY
+    });
+    playerState.inventory = playerState.inventory.filter(i => i !== item);
+    updateInventoryUI();
+    updateStatsUI();
 }
 
 // Initialize sounds on first interaction
@@ -89,172 +91,25 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-const playerState = {
-    currentFloor: 1,
-    charLevel: 1,
-    hp: 100,
-    maxHp: 100,
-    gold: 0,
-    xp: 0,
-    inventory: [],
-    inventoryMax: 20,
-    equippedWeapon: null,
-    equippedArmor: null,
-    attackCooldown: 0,
-    defendCooldown: 0,
-    isDefending: false
-};
 
-/**
- * Checks for experience gain and handles stat increases.
- */
-function checkLevelUp() {
-    const xpNeeded = playerState.charLevel * 100;
-    if (playerState.xp >= xpNeeded) {
-        playerState.charLevel++;
-        playerState.xp -= xpNeeded;
-        playerState.maxHp += 20;
-        playerState.hp = playerState.maxHp;
-        
-        addLog(`*** LEVEL UP! You are now level ${playerState.charLevel}! ***`);
-        addLog(`Max HP increased to ${playerState.maxHp}.`);
-        sounds.playLevelUp();
-        updateStatsUI();
-        
-        // Visual effect
-        const view = document.getElementById('view-container');
-        view.style.boxShadow = "0 0 50px #ff0";
-        setTimeout(() => view.style.boxShadow = "none", 1000);
-        
-        checkLevelUp(); // Check again if enough XP for multiple levels
-    }
-}
 
-function rollDice(sides) {
-    return Math.floor(Math.random() * sides) + 1;
-}
+
+
+
 
 // --- Interaction Handlers ---
 
-engine.onEntityAttack = (monster, dmg) => {
-    let finalDmg = dmg;
-    const armorDef = playerState.equippedArmor ? (playerState.equippedArmor.def || 0) : 0;
-    
-    if (playerState.isDefending) {
-        const weapon = playerState.equippedWeapon;
-        const weaponDef = weapon ? (weapon.def || 0) : 0;
-        const weaponDmgDie = weapon ? (weapon.damage || 4) : 4;
-        
-        const blockRoll = rollDice(20) + weaponDef; // D20 save
-        
-        if (blockRoll >= 18) {
-            // PERFECT PARRY
-            addLog(`*PERFECT PARRY*! (Rolled ${blockRoll})`);
-            sounds.playTake(); 
-            
-            const reflectDmg = rollDice(weaponDmgDie) + 5;
-            monster.hp -= reflectDmg;
-            addLog(`You deflect the blow and strike back for ${reflectDmg} DMG!`);
-            finalDmg = 0;
+engine.onEntityAttack = (monster, dmg) => combatSystem.onEntityAttack(monster, dmg);
 
-            const view = document.getElementById('view-container');
-            view.classList.add('perfect-parry');
-            setTimeout(() => view.classList.remove('perfect-parry'), 300);
-        } else if (blockRoll >= 10) {
-            // SUCCESSFUL BLOCK
-            const blockAmount = rollDice(6) + weaponDef + armorDef;
-            finalDmg = Math.max(0, dmg - blockAmount);
-            addLog(`You block! (Rolled ${blockRoll}) Reduced dmg to ${finalDmg}.`);
-            sounds.playStep();
-            
-            const reflectDmg = rollDice(4);
-            monster.hp -= reflectDmg;
-            addLog(`Quick counter-attack deals ${reflectDmg} DMG.`);
-        } else {
-            // FAILED BLOCK
-            finalDmg = Math.max(1, dmg - armorDef);
-            addLog(`Your guard was broken! (Rolled ${blockRoll}) Takes ${finalDmg} HP!`);
-            sounds.playMonsterHit();
-        }
 
-        // Check if counter-attack killed monster
-        if (monster.hp <= 0) {
-            handleMonsterDeath(monster, 15);
-        }
-    } else {
-        finalDmg = Math.max(1, dmg - armorDef);
-        addLog(`The ${monster.monsterType.toUpperCase()} hits you for ${finalDmg} HP! (Def: ${armorDef})`);
-        sounds.playMonsterHit();
-    }
 
-    playerState.hp -= finalDmg;
-    updateStatsUI();
-    
-    // Damage flash for player
-    const view = document.getElementById('view-container');
-    view.classList.add('hit-flash-player');
-    view.classList.add('screen-shake');
-    setTimeout(() => {
-        view.classList.remove('hit-flash-player');
-        view.classList.remove('screen-shake');
-    }, 150);
-    
-    if (playerState.hp <= 0) {
-        handleGameOver();
-    }
-};
 
-function handleMonsterDeath(monster, xpGain) {
-    addLog(`The ${monster.monsterType.toUpperCase()} has been defeated!`);
-    playerState.xp += xpGain;
-    checkLevelUp();
-    engine.entities = engine.entities.filter(e => e !== monster);
-}
-
-function handleGameOver() {
-    playerState.hp = 0;
-    updateStatsUI();
-    addLog("YOU HAVE PERISHED...");
-    sounds.playGameOver();
-    document.getElementById('game-over-overlay').classList.remove('hidden');
-}
 
 document.getElementById('btn-restart').onclick = () => {
     location.reload();
 };
 
-/**
- * Updates all stat-related UI elements.
- */
-function updateStatsUI() {
-    if (!document.getElementById('hp-value')) return;
 
-    document.getElementById('hp-value').innerText = `${playerState.hp}/${playerState.maxHp}`;
-    
-    // Update HP Bar — dynamic color based on HP%
-    const hpPercent = Math.max(0, (playerState.hp / playerState.maxHp) * 100);
-    const hpFill = document.getElementById('hp-bar-fill');
-    hpFill.style.width = `${hpPercent}%`;
-    hpFill.classList.remove('hp-high', 'hp-mid', 'hp-low');
-    if (hpPercent > 50)      hpFill.classList.add('hp-high');
-    else if (hpPercent > 25) hpFill.classList.add('hp-mid');
-    else                     hpFill.classList.add('hp-low');
-    
-    const dirs = ['N', 'E', 'S', 'W'];
-    document.getElementById('dir-value').innerText = dirs[engine.player.targetDir];
-    
-    const weaponDmg = playerState.equippedWeapon ? (playerState.equippedWeapon.atk || 0) : 0;
-    const armorDef = playerState.equippedArmor ? (playerState.equippedArmor.def || 0) : 0;
-    
-    document.getElementById('val-weapon').innerText = playerState.equippedWeapon ? playerState.equippedWeapon.name : 'None';
-    document.getElementById('val-armor').innerText = playerState.equippedArmor ? playerState.equippedArmor.name : 'None';
-    
-    document.getElementById('val-dmg').innerText = weaponDmg;
-    document.getElementById('val-def').innerText = armorDef;
-    document.getElementById('val-gold').innerText = playerState.gold;
-    document.getElementById('val-xp').innerText = playerState.xp;
-    document.getElementById('val-level').innerText = playerState.charLevel;
-}
 
 // --- UI Button Handlers ---
 
@@ -358,100 +213,13 @@ async function handleInteract() {
 
 function handleDefend() {
     if (storySystem.isOpen) return;
-    if (playerState.defendCooldown > 0) return;
-
-
-    addLog("You raise your guard!");
-    playerState.isDefending = true;
-    playerState.defendCooldown = 4000; 
-    
-    const btn = document.getElementById('btn-defend');
-    btn.style.boxShadow = "0 0 15px #0f0";
-    btn.innerText = "BLOCKING";
-    
-    setTimeout(() => {
-        playerState.isDefending = false;
-        btn.style.boxShadow = "none";
-        btn.innerText = "DEFEND";
-    }, 2500); 
+    combatSystem.handleDefend(document.getElementById('btn-defend'));
 }
 
 function handleAttack() {
     if (storySystem.isOpen) return;
     startSounds();
-
-    if (playerState.attackCooldown > 0) return;
-    playerState.isDefending = false; 
-
-    const monster = engine.attack();
-    
-    if (monster) {
-        const weapon = playerState.equippedWeapon;
-        const weaponAtk = weapon ? (weapon.atk || 0) : 0;
-        const weaponDmgDie = weapon ? (weapon.damage || 4) : 4;
-        
-        const hitRoll = rollDice(20);
-        let totalDmg = 0;
-        
-        if (hitRoll === 20) {
-            totalDmg = rollDice(weaponDmgDie) + rollDice(weaponDmgDie) + weaponAtk + 5;
-            addLog(`*** CRITICAL HIT! *** Rolled a 20!`);
-            addLog(`You obliterate the ${monster.monsterType.toUpperCase()} for ${totalDmg} DMG!`);
-            sounds.playHit();
-            sounds.playTake(); 
-        } else if (hitRoll === 1) {
-            addLog(`*CRITICAL MISS*! Rolled a 1! Your swing goes wild.`);
-            sounds.playMiss();
-            playerState.attackCooldown += 2000;
-            return;
-        } else if (hitRoll + weaponAtk >= 8) {
-            totalDmg = rollDice(weaponDmgDie) + weaponAtk;
-            addLog(`You hit ${monster.monsterType.toUpperCase()} for ${totalDmg} DMG! (Roll: ${hitRoll}+${weaponAtk})`);
-            sounds.playHit();
-        } else {
-            addLog(`You missed! (Roll: ${hitRoll}+${weaponAtk} vs AC 8)`);
-            sounds.playMiss();
-            return;
-        }
-        
-        monster.hp -= totalDmg;
-        monster.hitTimer = 0.15; // Trigger the "pro" enemy flash
-        playerState.attackCooldown = weapon ? (weapon.cooldown || 4000) : 2500; 
-        
-        const view = document.getElementById('view-container');
-        if (hitRoll === 20) {
-            view.classList.add('critical-hit');
-            view.classList.add('screen-shake');
-        }
-        
-        setTimeout(() => {
-            view.classList.remove('critical-hit');
-            view.classList.remove('screen-shake');
-        }, 200);
-
-        if (monster.hp <= 0) {
-            handleMonsterDeath(monster, 20);
-            playerState.gold += 10;
-            
-            // Random Loot Drop
-            if (Math.random() > 0.4) { 
-                const lootOptions = ['food', 'gold_pile', 'health_potion', 'sword', 'dagger', 'mace', 'leather_armor'];
-                const lootType = lootOptions[Math.floor(Math.random() * lootOptions.length)];
-                
-                engine.entities.push({
-                    type: 'object',
-                    monsterType: lootType, 
-                    x: monster.x,
-                    y: monster.y
-                });
-                addLog(`The monster dropped a ${lootType.toUpperCase()}!`);
-            }
-            updateStatsUI();
-        }
-    } else {
-        addLog("You swing at the empty air.");
-        playerState.attackCooldown = 1500; 
-    }
+    combatSystem.handleAttack();
 }
 
 function handleTake() {
@@ -501,122 +269,7 @@ function handleTake() {
     }
 }
 
-function toggleInventory(show) {
-    if (show && storySystem.isOpen) return;
-    const overlay = document.getElementById('inventory-overlay');
 
-    if (show) {
-        overlay.classList.remove('hidden');
-        updateInventoryUI();
-    } else {
-        overlay.classList.add('hidden');
-    }
-}
-
-function updateInventoryUI() {
-    const grid = document.getElementById('inventory-grid');
-    grid.innerHTML = '';
-    
-    for (let i = 0; i < playerState.inventoryMax; i++) {
-        const slot = document.createElement('div');
-        slot.className = 'inv-slot';
-        
-        const item = playerState.inventory[i];
-        if (item) {
-            const typeKey = item.id.toUpperCase();
-            const drawFunc = VectorSprites[typeKey];
-
-            if (item.sprite && item.sprite instanceof HTMLCanvasElement) {
-                const img = document.createElement('img');
-                img.src = item.sprite.toDataURL();
-                slot.appendChild(img);
-            } else if (item.spriteFile) {
-                const img = document.createElement('img');
-                img.src = item.spriteFile + '?v=' + Date.now();
-                slot.appendChild(img);
-            } else if (drawFunc) {
-                // Render Vector Sprite onto a small canvas for the inventory slot
-                const canvas = document.createElement('canvas');
-                canvas.width = 64;
-                canvas.height = 64;
-                const ctx = canvas.getContext('2d');
-                
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.translate(32, 32); // Center
-                drawFunc(ctx, 40); // Size 40 for the slot
-                
-                slot.appendChild(canvas);
-            } else {
-                slot.innerText = item.name[0];
-            }
-            slot.onclick = () => showItemDetails(item, slot);
-        }
-        grid.appendChild(slot);
-    }
-}
-
-function showItemDetails(item, slot) {
-    document.querySelectorAll('.inv-slot').forEach(s => s.classList.remove('selected'));
-    if (slot) slot.classList.add('selected');
-
-    document.getElementById('item-name').innerText = item.name || 'Select an item';
-    document.getElementById('item-desc').innerText = item.description || '...';
-    
-    const actions = document.getElementById('item-actions');
-    actions.innerHTML = '';
-    
-    if (!item.id) return;
-
-    if (item.type === 'weapon' || item.type === 'armor') {
-        const btn = document.createElement('button');
-        btn.className = 'rpg-btn';
-        btn.innerText = 'EQUIP';
-        btn.onclick = () => {
-            if (item.type === 'weapon') playerState.equippedWeapon = item;
-            else playerState.equippedArmor = item;
-            addLog(`Equipped ${item.name}`);
-            updateStatsUI();
-        };
-        actions.appendChild(btn);
-    } else if (item.type === 'consumable') {
-        const btn = document.createElement('button');
-        btn.className = 'rpg-btn';
-        btn.innerText = 'EAT';
-        btn.onclick = () => {
-            addLog(`You ate ${item.name}. Restored ${item.healAmount} HP.`);
-            playerState.hp = Math.min(playerState.maxHp, playerState.hp + item.healAmount);
-            playerState.inventory = playerState.inventory.filter(i => i !== item);
-            updateInventoryUI();
-            updateStatsUI();
-            showItemDetails({}, null);
-        };
-        actions.appendChild(btn);
-    }
-
-    const dropBtn = document.createElement('button');
-    dropBtn.className = 'rpg-btn';
-    dropBtn.style.borderColor = "#900";
-    dropBtn.innerText = 'DROP';
-    dropBtn.onclick = () => {
-        addLog(`Dropped ${item.name}`);
-        if (playerState.equippedWeapon === item) playerState.equippedWeapon = null;
-        if (playerState.equippedArmor === item) playerState.equippedArmor = null;
-        
-        engine.entities.push({
-            type: 'object',
-            monsterType: item.id,
-            x: engine.player.targetX,
-            y: engine.player.targetY
-        });
-        
-        playerState.inventory = playerState.inventory.filter(i => i !== item);
-        updateInventoryUI();
-        updateStatsUI();
-        showItemDetails({}, null);
-    };
-    actions.appendChild(dropBtn);
-}
 
 // --- Scaling and Settings ---
 

@@ -25,6 +25,26 @@ const THEMES = {
             decalPool: ['potion_decal'] // We can add more like 'lever_decal' later
         }
     },
+    CASTLE: {
+        atmosphere: {
+            dustSize: 6,
+            fogDist: 12,
+            waistLine: 0.7,
+            showWaistLine: true,
+            wallTexture: 'assets/textures/themes/castle/wall.png',
+            floorTexture: 'assets/textures/themes/castle/floor.png',
+            ceilingTexture: 'assets/textures/themes/castle/ceiling.png',
+            doorTexture: 'assets/textures/themes/castle/door.png',
+            textureScale: 1.0
+        },
+        spawn: {
+            monsterCount: 6,
+            monsterPool: ['spider', 'spider', 'skeleton'],
+            lootCount: 8,
+            lootPool: ['food', 'gold_pile', 'health_potion', 'dagger'],
+            decalPool: ['potion_decal']
+        }
+    },
     DENSE_FOG: {
         atmosphere: {
             dustSize: 6,
@@ -74,7 +94,7 @@ const THEMES = {
  */
 export const LevelThemes = {
     1: { ...THEMES.CLASSIC, atmosphere: { ...THEMES.CLASSIC.atmosphere, tint: 'rgba(0, 50, 255, 0.3)' } },
-    2: { ...THEMES.CLASSIC, atmosphere: { ...THEMES.CLASSIC.atmosphere, tint: 'rgba(0, 255, 50, 0.2)' } },
+    2: { ...THEMES.CASTLE, atmosphere: { ...THEMES.CASTLE.atmosphere, tint: 'rgba(0, 255, 50, 0.2)' } },
     3: { ...THEMES.OPEN_VOID, atmosphere: { ...THEMES.OPEN_VOID.atmosphere, tint: 'rgba(200, 0, 255, 0.2)' } },
     4: { ...THEMES.CRISP, atmosphere: { ...THEMES.CRISP.atmosphere, tint: 'rgba(0, 255, 255, 0.2)' } },
     5: { ...THEMES.CLASSIC, atmosphere: { ...THEMES.CLASSIC.atmosphere, tint: 'rgba(255, 100, 0, 0.2)' } },

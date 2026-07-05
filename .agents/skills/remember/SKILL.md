@@ -80,7 +80,7 @@ Before writing `memory.md`, run a final pass over the content to ensure no sensi
 
 ### Where to save
 
-Write the memory to `memory.md` in the project root. This file always contains only the most recent session state.
+Write the memory to `.agents/memory.md`. This file always contains only the most recent session state.
 
 If `memory.md` already exists, show the developer a brief summary of what is currently saved and ask for confirmation before overwriting:
 
@@ -150,7 +150,7 @@ When the developer runs `/remember restore` at the start of a new session:
 
 ### Step 1 — Find the memory
 
-Look for `memory.md` in the project root. If it does not exist, tell the developer:
+Look for `.agents/memory.md`. If it does not exist, tell the developer:
 
 ```
 No memory.md found in this project.
